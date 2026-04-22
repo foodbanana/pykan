@@ -152,22 +152,24 @@ def main():
     # 2. SHAP Summary/Importance (Mean Absolute Value - mirrors the Bar Plot)
     mean_shap = np.array(shap_values).mean(axis=0)
     abs_mean_shap = np.abs(mean_shap)
+    mean_avg_shap = np.abs(shap_values.mean(axis=0))
 
     shap_summary_df = pd.DataFrame({
         'Feature': feature_names,
         'Mean_SHAP': mean_shap,
-        'Abs_Mean_SHAP': abs_mean_shap
+        'Abs_Mean_SHAP': abs_mean_shap,
+        'Mean_Abs_SHAP': mean_avg_shap,
     })
 
     shap_summary_path = os.path.join(savepath, f'{data_name}_shap_importance.csv')
     shap_summary_df.to_csv(shap_summary_path, index=False)
     print("[SHAP Analysis Result]")
-    print(shap_summary_df.sort_values(by='Abs_Mean_SHAP', ascending=False))
+    print(shap_summary_df.sort_values(by='Mean_Abs_SHAP', ascending=False))
 
     # Plot 1: Bar Plot
     plot_custom_bars(
         names=shap_summary_df['Feature'],
-        values=shap_summary_df['Abs_Mean_SHAP'],
+        values=shap_summary_df['Mean_Abs_SHAP'],
         title=f"SHAP Global Importance (MLP) - {data_name}",
         ylabel="mean(|SHAP value|)",
         savepath=os.path.join(savepath, f"{data_name}_mlp_shap_bar_plot.png"),
