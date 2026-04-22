@@ -129,32 +129,32 @@ def main():
     # 3. SHAP Analysis
     # ==========================================
     # 1. Background (Physical Domain)
-    n_bg = 150
-
-    if n_bg < num_train_data:
-        X_bg = shap.kmeans(X_temp_norm, n_bg)
-    else:
-        X_bg = X_temp_norm
-
-    # 2. Test Data
-    X_eval = np.random.uniform(
-        low=[0.1 for _ in feature_names],
-        high=[0.9 for _ in feature_names],
-        size=(2000, len(feature_names))
-    )
-    # X_eval = X_temp_norm
-
-    ## =================================
-    # n_bg_set = 1000
-    # num_unique_rows = np.unique(X_temp_norm, axis=0).shape[0]
-    # n_bg = min(n_bg_set, num_unique_rows)
-    # print(f"N of Background set: {n_bg}")
+    # n_bg = 100
     #
     # if n_bg < num_train_data:
     #     X_bg = shap.kmeans(X_temp_norm, n_bg)
     # else:
     #     X_bg = X_temp_norm
-    # X_eval = X_test_norm
+
+    # 2. Test Data
+    # X_eval = np.random.uniform(
+    #     low=[0.1 for _ in feature_names],
+    #     high=[0.9 for _ in feature_names],
+    #     size=(2000, len(feature_names))
+    # )
+    # X_eval = X_temp_norm
+
+    ## =================================
+    n_bg_set = 100
+    num_unique_rows = np.unique(X_temp_norm, axis=0).shape[0]
+    n_bg = min(n_bg_set, num_unique_rows)
+    print(f"N of Background Data Points: {n_bg}")
+    if n_bg < num_train_data:
+        X_bg = shap.kmeans(X_temp_norm, n_bg)
+    else:
+        X_bg = X_temp_norm
+
+    X_eval = X_test_norm
 
 
     # Use the wrapper for the explainer
@@ -230,7 +230,7 @@ def main():
     while power2 < num_train_data:
         power2 *= 2
     N = power2
-    X_sobol = sample_sobol.sample(problem, N, calc_second_order=True)
+    X_sobol = sample_sobol.sample(problem, N, calc_second_order=True, seed=42)
 
     print(f"⏳ Running Sobol analysis on {X_sobol.shape[0]} samples...")
     Y_sobol = loaded_model.predict(X_sobol)
