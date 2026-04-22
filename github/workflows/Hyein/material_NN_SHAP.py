@@ -24,7 +24,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
     parser.add_argument("data_name", type=str, nargs='?', default="CO2RRLCA",
                         help="The name of the dataset (default: CO2RRLCA)")
-    parser.add_argument("rand_seed", type=int, nargs='?', default=42)
+    parser.add_argument("rand_seed", type=int, nargs='?', default=None)
 
     # Optional: Add flags for specific settings if needed
     # parser.add_argument("--nsamples", type=int, default=100, help="Number of samples for SHAP")
@@ -40,7 +40,11 @@ def main():
     # ==========================================
     root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein')
     filepath = os.path.join(root_dir, "data", f"{data_name}.csv")
-    savepath = os.path.join(root_dir, "material_nn_models", data_name + f"_seed_{rand_seed}")
+    if rand_seed is not None:
+        savepath = os.path.join(root_dir, "material_nn_models", data_name + f"_seed_{rand_seed}")
+    else:
+        savepath = os.path.join(root_dir, "material_nn_models", data_name)
+
 
     # Check if file exists
     if not os.path.exists(filepath):
@@ -146,20 +150,24 @@ def main():
     shap_raw_df.to_csv(shap_raw_path, index=False)
 
     # 2. SHAP Summary/Importance (Mean Absolute Value - mirrors the Bar Plot)
+    mean_shap = np.array(shap_values).mean(axis=0)
+    abs_mean_shap = np.abs(mean_shap)
+
     shap_summary_df = pd.DataFrame({
         'Feature': feature_names,
-        'Mean_Abs_SHAP': np.abs(shap_values).mean(axis=0)
+        'Mean_SHAP': mean_shap,
+        'Abs_Mean_SHAP': abs_mean_shap
     })
 
     shap_summary_path = os.path.join(savepath, f'{data_name}_shap_importance.csv')
     shap_summary_df.to_csv(shap_summary_path, index=False)
     print("[SHAP Analysis Result]")
-    print(shap_summary_df.sort_values(by='Mean_Abs_SHAP', ascending=False))
+    print(shap_summary_df.sort_values(by='Abs_Mean_SHAP', ascending=False))
 
     # Plot 1: Bar Plot
     plot_custom_bars(
         names=shap_summary_df['Feature'],
-        values=shap_summary_df['Mean_Abs_SHAP'],
+        values=shap_summary_df['Abs_Mean_SHAP'],
         title=f"SHAP Global Importance (MLP) - {data_name}",
         ylabel="mean(|SHAP value|)",
         savepath=os.path.join(savepath, f"{data_name}_mlp_shap_bar_plot.png"),

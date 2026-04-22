@@ -3,8 +3,8 @@ import os
 
 def main():
     target_scripts = [
-        "github/workflows/Hyein/material_NN_tuning.py",
-        "github/workflows/Hyein/material_all_NN_SHAP.py",
+        # "github/workflows/Hyein/material_NN_tuning.py",
+        "github/workflows/Hyein/material_NN_SHAP.py",
         # "github/workflows/Hyein/material_KAN_sweep.py",
         # "github/workflows/Hyein/material_KAN_analyze.py",
         # "github/workflows/Hyein/material_NN_for_KANrange.py",
@@ -12,8 +12,8 @@ def main():
     target_data = [
         'AgNP',
         'CO2RRLCA',
-        # 'CO2RRNPV',
-        # 'CO2RRMSP',
+        'CO2RRNPV',
+        'CO2RRMSP',
         'CO2HEx10',
         'CO2HPx10',
         # 'CO2RRCC', 'CO2RRRA', 'CO2RRC', 'CO2RRA', 'CO2RREE', 'CO2RRCA',
@@ -22,8 +22,8 @@ def main():
         # 'P3HT', 'CrossedBarrel',
         # 'MofEtotal'
     ]
-    # rand_seed = [42]
-    rand_seed = [i for i in range(10)]
+    rand_seed = []
+    # rand_seed = [i for i in range(10)]
 
 
     # target_scripts = [
@@ -44,8 +44,7 @@ def main():
 
     for s in target_scripts:
         for data in target_data:
-            for seed in rand_seed:
-                subprocess.run(['python', s, data, str(seed)])
+            subprocess.run(['python', s, data])
 
 if __name__ == '__main__':
     main()

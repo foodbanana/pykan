@@ -19,7 +19,8 @@ def main():
     parser = argparse.ArgumentParser(description="Tune MLP for a specific dataset.")
     parser.add_argument("data_name", type=str, nargs='?', default="P3HT",
                         help="The name of the dataset (default: P3HT)")
-    parser.add_argument("rand_seed", type=int, nargs='?', default=42)
+    parser.add_argument("rand_seed", type=int, nargs='?', default=None,
+                        help="The random seed (default: None=42)")
 
     args = parser.parse_args()
     data_name = args.data_name
@@ -33,7 +34,11 @@ def main():
     # Output Directory
     root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein')
     filepath = os.path.join(root_dir, "data", f"{data_name}.csv")
-    savepath = os.path.join(root_dir, "material_nn_models", data_name + f"_seed_{rand_seed}")
+    if rand_seed is not None:
+        savepath = os.path.join(root_dir, "material_nn_models", data_name + f"_seed_{rand_seed}")
+    else:
+        savepath = os.path.join(root_dir, "material_nn_models", data_name)
+        rand_seed = 42
     os.makedirs(savepath, exist_ok=True)
 
     # Check if file exists
