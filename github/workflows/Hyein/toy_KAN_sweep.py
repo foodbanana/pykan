@@ -213,7 +213,7 @@ def main():
     X_raw = np.random.uniform(
         low=[b[0] for b in bounds],
         high=[b[1] for b in bounds],
-        size=(1000, nx)
+        size=(1280, nx)
     )
 
     y_raw = np.apply_along_axis(target_func, 1, X_raw).reshape(-1, 1)

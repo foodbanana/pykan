@@ -22,14 +22,16 @@ def main():
     # 0. Argument Parsing
     # ==========================================
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="AgNP",
-                        help="The name of the dataset (default: P3HT)")
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2RRLCA",
+                        help="The name of the dataset (default: CO2RRLCA)")
+    parser.add_argument("rand_seed", type=int, nargs='?', default=42)
 
     # Optional: Add flags for specific settings if needed
     # parser.add_argument("--nsamples", type=int, default=100, help="Number of samples for SHAP")
 
     args = parser.parse_args()
     data_name = args.data_name
+    rand_seed = args.rand_seed
 
     print(f"🚀 Starting analysis for: {data_name}")
 
@@ -38,7 +40,7 @@ def main():
     # ==========================================
     root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein')
     filepath = os.path.join(root_dir, "data", f"{data_name}.csv")
-    savepath = os.path.join(root_dir, "material_nn_models", data_name)
+    savepath = os.path.join(root_dir, "material_nn_models", data_name + f"_seed_{rand_seed}")
 
     # Check if file exists
     if not os.path.exists(filepath):
@@ -61,12 +63,9 @@ def main():
     y = df_out_final[name_y].values.reshape(-1, 1)
 
     X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=42)
-    # X_train_denorm, X_val_denorm, y_train_denorm, y_val_denorm = train_test_split(X_temp_denorm, y_temp_denorm,
-    #                                                                               test_size=0.2, random_state=42)
-
-    # print(f"Train/Validation/Test : {len(X_train_denorm)} / {len(X_val_denorm)} / {len(X_test_denorm)}")
 
     feature_names = name_X
+    num_train_data = X_temp_denorm.shape[0]
 
     # ==========================================
     # 2. Load Models & Scalers
@@ -94,19 +93,19 @@ def main():
     y_pred_norm = loaded_model.predict(X_test_norm)
 
     # Inverse transform to original units
-    y_test_orig = scaler_y.inverse_transform(y_test_denorm.reshape(-1, 1)).flatten()
-    y_pred_orig = scaler_y.inverse_transform(y_pred_norm.reshape(-1, 1)).flatten()
+    y_test_denorm_flatten = y_test_denorm.reshape(-1, 1).flatten()
+    y_pred_denorm = scaler_y.inverse_transform(y_pred_norm.reshape(-1, 1)).flatten()
 
     # Calculate R2
-    r2 = r2_score(y_test_orig, y_pred_orig)
+    r2 = r2_score(y_test_denorm_flatten, y_pred_denorm)
 
     # Plotting
     plt.figure(figsize=(4, 4))
-    plt.scatter(y_test_orig, y_pred_orig, alpha=0.6, color='skyblue', edgecolors='k', s=30, label='Test Data')
+    plt.scatter(y_test_denorm_flatten, y_pred_denorm, alpha=0.6, color='skyblue', edgecolors='k', s=30, label='Test Data')
 
     # Add Identity Line (Perfect Prediction)
-    min_val = min(min(y_test_orig), min(y_pred_orig))
-    max_val = max(max(y_test_orig), max(y_pred_orig))
+    min_val = min(min(y_test_denorm_flatten), min(y_pred_denorm))
+    max_val = max(max(y_test_denorm_flatten), max(y_pred_denorm))
     plt.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Perfect Fit')
 
     plt.xlabel(f'Actual {name_y}')
@@ -154,6 +153,8 @@ def main():
 
     shap_summary_path = os.path.join(savepath, f'{data_name}_shap_importance.csv')
     shap_summary_df.to_csv(shap_summary_path, index=False)
+    print("[SHAP Analysis Result]")
+    print(shap_summary_df.sort_values(by='Mean_Abs_SHAP', ascending=False))
 
     # Plot 1: Bar Plot
     plot_custom_bars(
@@ -197,7 +198,10 @@ def main():
         'bounds': [[scaler_min, scaler_max]] * n_features
     }
 
-    N = 1024
+    power2 = 1
+    while power2 < num_train_data:
+        power2 *= 2
+    N = power2
     X_sobol = sample_sobol.sample(problem, N, calc_second_order=True)
 
     print(f"⏳ Running Sobol analysis on {X_sobol.shape[0]} samples...")

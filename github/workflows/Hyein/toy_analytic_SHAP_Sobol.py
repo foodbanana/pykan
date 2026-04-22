@@ -95,7 +95,7 @@ def run_analysis_suite(model_func, bounds, feature_names, save_dir, suffix, titl
     X_representative = np.random.uniform(
         low=[b[0] for b in bounds],
         high=[b[1] for b in bounds],
-        size=(2000, n_features)
+        size=(1024, n_features)
     )
     # Summarize to 100 weighted points
     X_bg = shap.kmeans(X_representative, 100)
@@ -104,7 +104,7 @@ def run_analysis_suite(model_func, bounds, feature_names, save_dir, suffix, titl
     X_test = np.random.uniform(
         low=[b[0] for b in bounds],
         high=[b[1] for b in bounds],
-        size=(500, n_features)
+        size=(256, n_features)
     )
 
     explainer = shap.KernelExplainer(model_func, X_bg)

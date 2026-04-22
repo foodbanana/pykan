@@ -1,0 +1,15 @@
+{
+    "dataset": "CO2HPx10",
+    "test_r2": 0.8350822702534325,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.001,
+        "hidden_layer_sizes": [
+            64,
+            32,
+            16
+        ],
+        "alpha": 1.0,
+        "activation": "relu"
+    }
+}

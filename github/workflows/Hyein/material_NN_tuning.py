@@ -10,6 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import r2_score, mean_squared_error
 from kan.custom_processing import remove_outliers_iqr
+import matplotlib.pyplot as plt
 
 def main():
     # ==========================================
@@ -18,11 +19,13 @@ def main():
     parser = argparse.ArgumentParser(description="Tune MLP for a specific dataset.")
     parser.add_argument("data_name", type=str, nargs='?', default="P3HT",
                         help="The name of the dataset (default: P3HT)")
+    parser.add_argument("rand_seed", type=int, nargs='?', default=42)
 
     args = parser.parse_args()
     data_name = args.data_name
+    rand_seed = args.rand_seed
 
-    print(f"🚀 Starting MLP Tuning for: '{data_name}'")
+    print(f"🚀 Starting MLP Tuning for: '{data_name}' with seed={rand_seed}")
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"   - Device: {device}")
@@ -30,7 +33,7 @@ def main():
     # Output Directory
     root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein')
     filepath = os.path.join(root_dir, "data", f"{data_name}.csv")
-    savepath = os.path.join(root_dir, "material_nn_models", data_name)
+    savepath = os.path.join(root_dir, "material_nn_models", data_name + f"_seed_{rand_seed}")
     os.makedirs(savepath, exist_ok=True)
 
     # Check if file exists
@@ -76,19 +79,20 @@ def main():
     # ==========================================
     param_distributions = {
         'hidden_layer_sizes': [
+            (128,),
             (64, 64),
             (128, 64),
             (100, 100),
             (64, 32, 16),
-            (128,)
+            (64, 32, 16, 16),
         ],
         'activation': ['relu', 'tanh'],  # tanh is often good for smooth analytical functions
         'solver': ['adam', 'lbfgs'],  # lbfgs is great for noise-free/low-noise math functions
-        'alpha': [0.0001, 0.001, 0.01, 0.1],
-        'learning_rate_init': [0.001, 0.01, 0.0005]
+        'alpha': [1.0, 10.],
+        'learning_rate_init': [0.0005, 0.001, 0.01, 0.1]
     }
 
-    mlp = MLPRegressor(max_iter=10000, random_state=42)  # Increased max_iter for convergence
+    mlp = MLPRegressor(max_iter=10000, random_state=rand_seed)  # Increased max_iter for convergence
 
     search = RandomizedSearchCV(
         estimator=mlp,
@@ -98,7 +102,7 @@ def main():
         scoring='r2',
         n_jobs=-1,
         verbose=1,
-        random_state=42
+        random_state=rand_seed
     )
 
     print("\n🏎️  Starting Randomized Hyperparameter Search...")
@@ -118,9 +122,32 @@ def main():
     y_pred_test_norm = best_model.predict(X_test_norm)
     r2_test = r2_score(y_test_norm, y_pred_test_norm)
 
+    y_pred_test_denorm = scaler_y.inverse_transform(y_pred_test_norm.reshape([-1, 1]))
+
+    # Plotting
+    plt.figure(figsize=(4, 4))
+    plt.scatter(y_test_denorm, y_pred_test_denorm, alpha=0.6, color='skyblue', edgecolors='k', s=30, label='Test Data')
+
+    # Add Identity Line (Perfect Prediction)
+    min_val = min(min(y_test_denorm), min(y_pred_test_denorm))
+    max_val = max(max(y_test_denorm), max(y_pred_test_denorm))
+    plt.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Perfect Fit')
+
+    plt.xlabel(f'Actual {name_y}')
+    plt.ylabel(f'Predicted {name_y}')
+    plt.title(f'Parity Plot: {data_name} ($R^2 = {r2_test:.3f}$)')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.7)
+
+    # Save the plot
+    parity_path = os.path.join(savepath, f"{data_name}_mlp_parity_at_training_plot.png")
+    plt.savefig(parity_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+
     print(f"📊 [Test Set]       R2 Score: {r2_test:.4f}")
 
-    if r2_test < 0.9:
+    if r2_test < 0.8:
         print("⚠️  Warning: R2 is low. Try increasing 'n_iter' or checking 'noise_level'.")
 
     # ==========================================
