@@ -128,20 +128,38 @@ def main():
     # ==========================================
     # 3. SHAP Analysis
     # ==========================================
-    num_data = len(X_temp_norm)
-    num_shap_sample = 1000
+    # 1. Background (Physical Domain)
+    n_bg = 150
 
-    num_unique_rows = np.unique(X_temp_norm, axis=0).shape[0]
-    n_clusters = min(num_shap_sample, num_unique_rows)
-
-    if n_clusters < num_data:
-        X_train_summary = shap.kmeans(X_temp_norm, n_clusters)
+    if n_bg < num_train_data:
+        X_bg = shap.kmeans(X_temp_norm, n_bg)
     else:
-        X_train_summary = X_temp_norm
+        X_bg = X_temp_norm
 
-    explainer = shap.KernelExplainer(loaded_model.predict, X_train_summary)
+    # 2. Test Data
+    X_eval = np.random.uniform(
+        low=[0.1 for _ in feature_names],
+        high=[0.9 for _ in feature_names],
+        size=(2000, len(feature_names))
+    )
+    # X_eval = X_temp_norm
 
-    shap_values = explainer.shap_values(X_test_norm)
+    ## =================================
+    # n_bg_set = 1000
+    # num_unique_rows = np.unique(X_temp_norm, axis=0).shape[0]
+    # n_bg = min(n_bg_set, num_unique_rows)
+    # print(f"N of Background set: {n_bg}")
+    #
+    # if n_bg < num_train_data:
+    #     X_bg = shap.kmeans(X_temp_norm, n_bg)
+    # else:
+    #     X_bg = X_temp_norm
+    # X_eval = X_test_norm
+
+
+    # Use the wrapper for the explainer
+    explainer = shap.KernelExplainer(loaded_model.predict, X_bg)
+    shap_values = explainer.shap_values(X_eval)
 
     # [NEW] Save SHAP Values to CSV
     # 1. Raw SHAP values (useful for reproducing dot plots)
@@ -179,7 +197,7 @@ def main():
     # Plot 2: Dot Plot
     shap.summary_plot(
         shap_values,
-        X_test_norm,
+        X_eval,
         feature_names=feature_names,
         show=False  # <--- Crucial change
     )
