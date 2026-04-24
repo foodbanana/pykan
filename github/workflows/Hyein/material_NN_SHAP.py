@@ -22,8 +22,8 @@ def main():
     # 0. Argument Parsing
     # ==========================================
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="CO2RRLCA",
-                        help="The name of the dataset (default: CO2RRLCA)")
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2HEx10",
+                        help="The name of the dataset (default: CO2HEx10)")
     parser.add_argument("rand_seed", type=int, nargs='?', default=None)
 
     # Optional: Add flags for specific settings if needed
@@ -124,6 +124,53 @@ def main():
     plt.close()
 
     print(f"✅ Parity plot saved to: {parity_path} (R2: {r2:.4f})")
+    # ==========================================
+    # 2.6 Plot Input vs Output
+    # ==========================================
+    # Predict on training (temp) data
+    pred_y_norm_temp = loaded_model.predict(X_temp_norm)
+
+    try:
+        pred_y_temp = scaler_y.inverse_transform(pred_y_norm_temp.reshape(-1, 1)).flatten()
+    except ValueError:
+        pred_y_temp = pred_y_norm_temp.flatten()
+
+    y_temp_denorm_flatten = y_temp_denorm.flatten()
+
+    n_features = X_temp_denorm.shape[1]
+    n_cols = 2
+    n_rows = (n_features + n_cols - 1) // n_cols
+
+    fig_io, axs_io = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), constrained_layout=True)
+
+    # Handle dimension issues if features <= 2
+    if n_features == 1:
+        axs_io = np.array([axs_io])
+    elif n_rows == 1:
+        axs_io = np.array(axs_io)
+
+    axs_io = axs_io.flatten()
+
+    for i in range(n_features):
+        ax = axs_io[i]
+        ax.scatter(X_temp_denorm[:, i], y_temp_denorm_flatten, alpha=0.5, c='gray', s=15, label='Ground Truth')
+        ax.scatter(X_temp_denorm[:, i], pred_y_temp, alpha=0.5, c='red', s=15, label='Prediction')
+        feature_label = feature_names[i] if feature_names and i < len(feature_names) else f"Feature {i}"
+        ax.set_xlabel(feature_label)
+        ax.set_ylabel(f"Output {name_y}")
+        ax.legend(loc='upper left')
+        ax.grid(True, alpha=0.3)
+
+    # Hide any unused subplots
+    for i in range(n_features, len(axs_io)):
+        axs_io[i].axis('off')
+
+    plt.suptitle(f"Input vs Output Analysis: {data_name}", fontsize=14)
+    input_vs_output_path = os.path.join(savepath, f"{data_name}_mlp_input_vs_output.png")
+    plt.savefig(input_vs_output_path, dpi=300)
+    plt.close()
+
+    print(f"✅ Input vs Output plot saved to: {input_vs_output_path}")
 
     # ==========================================
     # 3. SHAP Analysis
