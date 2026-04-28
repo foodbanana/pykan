@@ -36,9 +36,12 @@ def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
     parser.add_argument("data_name", type=str, nargs='?', default="CO2HEx10",
                         help="The name of the dataset")
+    parser.add_argument("rand_seed", type=int, nargs='?', default=None,
+                        help="The random seed (default: None=42)")
 
     args = parser.parse_args()
     data_name = args.data_name
+    rand_seed = args.rand_seed
 
     if "CO2RR" in data_name:
         data_on_contour = False
@@ -50,7 +53,11 @@ def main():
     # ==========================================
     root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein')
     filepath = os.path.join(root_dir, "data", f"{data_name}.csv")
-    savepath = os.path.join(root_dir, "material_kan_models", data_name)
+    if rand_seed is not None:
+        savepath = os.path.join(root_dir, "material_kan_models", data_name + f"_seed_{rand_seed}")
+    else:
+        savepath = os.path.join(root_dir, "material_kan_models", data_name)
+        rand_seed = 42
 
     ckpt_path = os.path.join(savepath, f'{data_name}_best_kan_model')
     scaler_x_path = os.path.join(savepath, f'{data_name}_mlp_scaler_X.pkl')
@@ -97,9 +104,9 @@ def main():
     X = df_in_final[name_X].values
     y = df_out_final[name_y].values.reshape(-1, 1)
 
-    X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=rand_seed)
     X_train_denorm, X_val_denorm, y_train_denorm, y_val_denorm = train_test_split(X_temp_denorm, y_temp_denorm,
-                                                                                  test_size=0.2, random_state=42)
+                                                                                  test_size=0.2, random_state=rand_seed)
     print(f"Train/Validation/Test : {len(X_train_denorm)} / {len(X_val_denorm)} / {len(X_test_denorm)}")
 
     feat_names = name_X

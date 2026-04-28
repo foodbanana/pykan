@@ -8,13 +8,14 @@ INPUT_FILE = 'data_parsed.csv'  # Replace with your actual raw file name
 
 # 2. Target Column Name
 # Enter the exact name of the Y variable in your raw csv
-TARGET_COL = 'minimum_selling_price'    # minimum_selling_price, CO2_emission
+TARGET_COL = 'CO2_emission'    # minimum_selling_price, CO2_emission
 name_to_save = {
     'CO2_emission': 'CO2HE',
     'minimum_selling_price': 'CO2HP'
 }
-OUTPUT_FILE = f'{name_to_save[TARGET_COL]}x10x15.csv'  # This is the file you will use in the main code
+OUTPUT_FILE = f'{name_to_save[TARGET_COL]}x10v2.csv'  # This is the file you will use in the main code
 
+EXCLUDE_COLS = ['x7', 'x9', 'x16']
 # =================================================
 
 def clean_dataset():
@@ -34,11 +35,11 @@ def clean_dataset():
     else:
         print("   ⚠️ Warning: 'flag' column not found. Skipping row filtering.")
 
-    if 'x15' in df.columns:
-        df = df[df['x15'].astype(float) < 1]
-        print(f"   - Rows after filtering 'x15' at the bound: {len(df)}")
-    else:
-        print("   ⚠️ Warning: 'x15' column not found. Skipping row filtering.")
+    # if 'x15' in df.columns:
+    #     df = df[df['x15'].astype(float) < 1]
+    #     print(f"   - Rows after filtering 'x15' at the bound: {len(df)}")
+    # else:
+    #     print("   ⚠️ Warning: 'x15' column not found. Skipping row filtering.")
 
     if 'x10' in df.columns:
         df = df[df['x10'].astype(float) > 1]
@@ -47,7 +48,8 @@ def clean_dataset():
         print("   ⚠️ Warning: 'x10' column not found. Skipping row filtering.")
 
     # 2. Select Features (x1 - x16)
-    feature_cols = [f'x{i}' for i in range(1, 17)]
+    all_feature_cols = [f'x{i}' for i in range(1, 17)]
+    feature_cols = [col for col in all_feature_cols if col not in EXCLUDE_COLS]
 
     # Verify these columns exist
     missing = [col for col in feature_cols if col not in df.columns]

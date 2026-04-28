@@ -24,7 +24,8 @@ def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
     parser.add_argument("data_name", type=str, nargs='?', default="CO2HEx10",
                         help="The name of the dataset (default: CO2HEx10)")
-    parser.add_argument("rand_seed", type=int, nargs='?', default=None)
+    parser.add_argument("rand_seed", type=int, nargs='?', default=None,
+                        help="The random seed (default: None=42)")
 
     # Optional: Add flags for specific settings if needed
     # parser.add_argument("--nsamples", type=int, default=100, help="Number of samples for SHAP")
@@ -33,7 +34,7 @@ def main():
     data_name = args.data_name
     rand_seed = args.rand_seed
 
-    print(f"🚀 Starting analysis for: {data_name}")
+    print(f"🚀 Starting analysis for: {data_name} with seed={rand_seed}")
 
     # ==========================================
     # 1. Data Loading & Preprocessing
@@ -44,6 +45,7 @@ def main():
         savepath = os.path.join(root_dir, "material_nn_models", data_name + f"_seed_{rand_seed}")
     else:
         savepath = os.path.join(root_dir, "material_nn_models", data_name)
+        rand_seed = 42
 
 
     # Check if file exists
@@ -66,7 +68,7 @@ def main():
     X = df_in_final[name_X].values
     y = df_out_final[name_y].values.reshape(-1, 1)
 
-    X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=rand_seed)
 
     feature_names = name_X
     num_train_data = X_temp_denorm.shape[0]
@@ -277,7 +279,7 @@ def main():
     while power2 < num_train_data:
         power2 *= 2
     N = power2
-    X_sobol = sample_sobol.sample(problem, N, calc_second_order=True, seed=42)
+    X_sobol = sample_sobol.sample(problem, N, calc_second_order=True, seed=rand_seed)
 
     print(f"⏳ Running Sobol analysis on {X_sobol.shape[0]} samples...")
     Y_sobol = loaded_model.predict(X_sobol)

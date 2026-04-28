@@ -62,9 +62,9 @@ def main():
     X = df_in_final[name_X].values
     y = df_out_final[name_y].values.reshape(-1, 1)
 
-    X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=rand_seed)
     X_train_denorm, X_val_denorm, y_train_denorm, y_val_denorm = train_test_split(X_temp_denorm, y_temp_denorm,
-                                                                                  test_size=0.2, random_state=42)
+                                                                                  test_size=0.2, random_state=rand_seed)
     print(f"Train/Validation/Test : {len(X_train_denorm)} / {len(X_val_denorm)} / {len(X_test_denorm)}")
 
     feat_names = name_X

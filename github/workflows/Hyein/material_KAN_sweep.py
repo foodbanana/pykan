@@ -54,7 +54,8 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                  sym_weight_simple=0.0,
                  sym_r2_threshold=0.0,
                  sym_range=10,
-                 device='cpu'):
+                 device='cpu',
+                 seed=42):
 
         self.dataset = None
 
@@ -67,6 +68,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         self.lamb_entropy = lamb_entropy
         self.lr = lr
         self.steps = steps
+        self.seed = seed
 
         self.pruning_enabled = pruning_enabled
         self.pruning_node_th = 0.01
@@ -93,7 +95,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 
         # Initialize KAN
         self.model = MultKAN(width=width, grid=self.grid, k=self.k,
-                             seed=42, device=self.device)   # grid_range=(0.1, 0.9)
+                             seed=self.seed, device=self.device)   # grid_range=(0.1, 0.9)
 
         # Create dataset dictionary
         dataset = {
@@ -107,7 +109,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         # 1. Initialize with BASE Grid
         start_grid = 3
         self.model = MultKAN(width=width, grid=start_grid, k=self.k,
-                             seed=42, device=self.device)
+                             seed=self.seed, device=self.device)
 
         # 2. Phase 1: Train Coarse Model
         self.model.fit(dataset, opt='LBFGS', steps=self.steps,
@@ -184,11 +186,14 @@ def main():
     parser = argparse.ArgumentParser(description="Tune KAN for a specific dataset.")
     parser.add_argument("data_name", type=str, nargs='?', default="P3HT",
                         help="The name of the dataset (default: P3HT)")
+    parser.add_argument("rand_seed", type=int, nargs='?', default=None,
+                        help="The random seed (default: None=42)")
 
     args = parser.parse_args()
     data_name = args.data_name
+    rand_seed = args.rand_seed
 
-    print(f"🚀 Starting KAN Tuning for: '{data_name}'")
+    print(f"🚀 Starting KAN Tuning for: '{data_name}' with seed={rand_seed}")
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"   - Device: {device}")
@@ -196,7 +201,11 @@ def main():
     # Output Directory
     root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein')
     filepath = os.path.join(root_dir, "data", f"{data_name}.csv")
-    savepath = os.path.join(root_dir, "material_kan_models", data_name)
+    if rand_seed is not None:
+        savepath = os.path.join(root_dir, "material_kan_models", data_name + f"_seed_{rand_seed}")
+    else:
+        savepath = os.path.join(root_dir, "material_kan_models", data_name)
+        rand_seed = 42
     os.makedirs(savepath, exist_ok=True)
 
     # Check if file exists
@@ -219,9 +228,9 @@ def main():
     X = df_in_final[name_X].values
     y = df_out_final[name_y].values.reshape(-1, 1)
 
-    X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=rand_seed)
     X_train_denorm, X_val_denorm, y_train_denorm, y_val_denorm = train_test_split(X_temp_denorm, y_temp_denorm,
-                                                                                  test_size=0.2, random_state=42)
+                                                                                  test_size=0.2, random_state=rand_seed)
     print(f"Train/Validation/Test : {len(X_train_denorm)} / {len(X_val_denorm)} / {len(X_test_denorm)}")
 
     feat_names = name_X
@@ -254,17 +263,17 @@ def main():
 
     # Pass default symbolic options here if you want to override defaults
     # For now, we rely on the class defaults or you can set fixed values
-    kan_wrapper = KANRegressor(device=device, symbolic_enabled=True)
+    kan_wrapper = KANRegressor(device=device, symbolic_enabled=True, seed=rand_seed)
 
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=200,  # Increased slightly to cover new params
+        n_iter=20,  # Increased slightly to cover new params
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
         verbose=1,
-        random_state=42
+        random_state=rand_seed
     )
 
     print("\n🏎️  Starting Randomized Hyperparameter Search (KAN with Symbolic)...")
