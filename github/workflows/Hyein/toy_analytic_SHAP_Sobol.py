@@ -185,6 +185,13 @@ STANDARD_ZOO = {
         "mask_idx": None,
         "mask_division": []
     },
+    "rosenbrock": {
+        "func": lambda x: (1 - 2*x[0]) ** 2 + 100 * (1 + 2*x[1] - 4 * x[0]**2) ** 2,
+        "bounds": [[-1, 1], [-1, 1]],
+        "names": ["Quadratic (x0)", "Parabolic (x1)"],
+        "mask_idx": None,
+        "mask_division": []
+    }
 }
 FUNCTION_ZOO = {**STANDARD_ZOO, **LOG_SUM_ZOO, **CONVEX_ZOO}
 
