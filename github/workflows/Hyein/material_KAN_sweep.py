@@ -114,14 +114,14 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         # 2. Phase 1: Train Coarse Model
         self.model.fit(dataset, opt='LBFGS', steps=self.steps,
                        lamb=self.lamb, lamb_coef=self.lamb_coef, lamb_entropy=self.lamb_entropy,
-                       lr=self.lr, lamb_coefdiff=self.lamb_coefdiff)
+                       lr=self.lr, lamb_coefdiff=self.lamb_coefdiff, monitor=False)
 
         # 3. Phase 2: Grid Extension (if needed)
         if self.grid > start_grid:
             self.model = self.model.refine(self.grid)
             self.model.fit(dataset, opt='LBFGS', steps=self.steps,
                            lamb=self.lamb, lamb_coef=self.lamb_coef, lamb_entropy=self.lamb_entropy,
-                           lr=self.lr, lamb_coefdiff=self.lamb_coefdiff)
+                           lr=self.lr, lamb_coefdiff=self.lamb_coefdiff, monitor=False)
 
         if self.pruning_enabled:
             try:
@@ -139,7 +139,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                                          a_range=(-self.sym_range, self.sym_range),
                                          b_range=(-self.sym_range, self.sym_range))
 
-                self.model.fit(dataset, opt='LBFGS', steps=self.steps, lr=self.lr)
+                self.model.fit(dataset, opt='LBFGS', steps=self.steps, lr=self.lr, monitor=False)
             except Exception as e:
                 print(f"   ⚠️ Symbolic failed (ignoring): {e}")
 
@@ -228,6 +228,7 @@ def main():
     X = df_in_final[name_X].values
     y = df_out_final[name_y].values.reshape(-1, 1)
 
+    #TODO: Right now, a test set is not used at all. Use the overall X instead.
     X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=rand_seed)
     X_train_denorm, X_val_denorm, y_train_denorm, y_val_denorm = train_test_split(X_temp_denorm, y_temp_denorm,
                                                                                   test_size=0.2, random_state=rand_seed)
@@ -268,17 +269,39 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=20,  # Increased slightly to cover new params
+        n_iter=200,  # Increased slightly to cover new params
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
-        verbose=1,
+        verbose=3,
         random_state=rand_seed
     )
 
     print("\n🏎️  Starting Randomized Hyperparameter Search (KAN with Symbolic)...")
     search.fit(X_train_norm, y_train_norm.ravel())
+    # ==========================================
+    # New: Visualize Search Progress
+    # ==========================================
+    # Extract mean test scores from the search results
+    cv_scores = search.cv_results_['mean_test_score']
 
+    # Calculate the cumulative maximum to show the discovery of the best model
+    best_so_far = np.maximum.accumulate(cv_scores)
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(cv_scores, 'bo', alpha=0.3, label='Iteration Mean $R^2$')
+    plt.plot(best_so_far, 'r-', linewidth=2, label='Best $R^2$ Found')
+
+    plt.xlabel('Iteration (Candidate Index)')
+    plt.ylabel('Mean Cross-Validation $R^2$')
+    plt.title(f'Hyperparameter Search Progress: {data_name}')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.7)
+
+    # Save the progress plot
+    search_plot_path = os.path.join(savepath, f"{data_name}_search_progress.png")
+    plt.savefig(search_plot_path, dpi=300)
+    print(f"📈 Search progress plot saved to: {search_plot_path}")
     # ==========================================
     # 6. Results & Saving
     # ==========================================
@@ -337,7 +360,7 @@ def main():
 
     plot_path = os.path.join(savepath, f"{data_name}_parity_plot.png")
     plt.savefig(plot_path, dpi=300)
-    plt.show()
+    # plt.show()
     print(f"📊 Parity plot saved to: {plot_path}")
 
     best_kan_model.forward(best_estimator.dataset['train_input'])
