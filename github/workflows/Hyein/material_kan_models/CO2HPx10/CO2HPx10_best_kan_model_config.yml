@@ -3,7 +3,7 @@ auto_save: true
 base_fun_name: silu
 ckpt_path: ./model
 device: cpu
-grid: 5
+grid: 10
 grid_eps: 0.02
 grid_range:
 - -1
@@ -15,22 +15,22 @@ sb_trainable: true
 sp_trainable: true
 state_id: 1
 symbolic.funs_name.0:
-- - exp
-  - x^3
-  - x^3
+- - x^4
+  - exp
+  - 1/x^2
+  - tanh
+  - 1/x^2
+  - 1/x^2
+  - 1/x^2
+  - 1/x^2
+  - sin
   - tanh
   - x^3
   - exp
-  - x^4
+  - exp
+  - exp
   - 1/x^2
-  - sin
-  - tanh
-  - tanh
-  - x^3
-  - 1/x^2
-  - x^4
-  - x^3
-  - sin
+  - exp
 symbolic_enabled: true
 width:
 - - 16

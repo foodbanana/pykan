@@ -11,6 +11,8 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import MinMaxScaler
+
+from github.workflows.Hyein.data.co2_hydrogenation.reorganize import EXCLUDE_COLS
 from kan.custom_processing import remove_outliers_iqr
 
 # Import KAN
@@ -184,8 +186,8 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 # ==========================================
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="P3HT",
-                        help="The name of the dataset (default: P3HT)")
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2HPx10",
+                        help="The name of the dataset (default: CO2HPx10)")
     parser.add_argument("rand_seed", type=int, nargs='?', default=None,
                         help="The random seed (default: None=42)")
 
@@ -225,17 +227,18 @@ def main():
     removed_count = len(df_in) - len(df_in_final)
     print(f"# of data after removing outliers: {len(df_in_final)} ({removed_count} removed)")
 
+    if "CO2H" in data_name:
+        EXCLUDE_COLS = ['x7', 'x9', 'x16']
+        for col in EXCLUDE_COLS:
+            if col in name_X:
+                name_X.remove(col)
+
     X = df_in_final[name_X].values
     y = df_out_final[name_y].values.reshape(-1, 1)
 
-    #TODO: Right now, a test set is not used at all. Use the overall X instead.
-    X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=rand_seed)
-    X_train_denorm, X_val_denorm, y_train_denorm, y_val_denorm = train_test_split(X_temp_denorm, y_temp_denorm,
-                                                                                  test_size=0.2, random_state=rand_seed)
-    print(f"Train/Validation/Test : {len(X_train_denorm)} / {len(X_val_denorm)} / {len(X_test_denorm)}")
+    X_train_denorm, X_test_denorm, y_train_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=rand_seed)
 
     feat_names = name_X
-    nx = len(name_X)
 
     scaler_X = MinMaxScaler(feature_range=(0.1, 0.9))
     scaler_y = MinMaxScaler(feature_range=(0.1, 0.9))
@@ -245,6 +248,9 @@ def main():
 
     X_test_norm = scaler_X.transform(X_test_denorm)
     y_test_norm = scaler_y.transform(y_test_denorm)
+
+    X_norm = scaler_X.transform(X)
+    y_norm = scaler_y.transform(y)
 
     # ==========================================
     # 5. Hyperparameter Tuning
@@ -269,7 +275,7 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=200,  # Increased slightly to cover new params
+        n_iter=100,
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
@@ -278,7 +284,7 @@ def main():
     )
 
     print("\n🏎️  Starting Randomized Hyperparameter Search (KAN with Symbolic)...")
-    search.fit(X_train_norm, y_train_norm.ravel())
+    search.fit(X_norm, y_norm.ravel())
     # ==========================================
     # New: Visualize Search Progress
     # ==========================================
@@ -288,9 +294,13 @@ def main():
     # Calculate the cumulative maximum to show the discovery of the best model
     best_so_far = np.maximum.accumulate(cv_scores)
 
+    joblib.dump(cv_scores, os.path.join(savepath, f'{data_name}_cv_scores.pkl'))
+    joblib.dump(best_so_far, os.path.join(savepath, f'{data_name}_best_so_far.pkl'))
+
     plt.figure(figsize=(10, 5))
     plt.plot(cv_scores, 'bo', alpha=0.3, label='Iteration Mean $R^2$')
     plt.plot(best_so_far, 'r-', linewidth=2, label='Best $R^2$ Found')
+    plt.ylim(0, 1)
 
     plt.xlabel('Iteration (Candidate Index)')
     plt.ylabel('Mean Cross-Validation $R^2$')
@@ -301,7 +311,9 @@ def main():
     # Save the progress plot
     search_plot_path = os.path.join(savepath, f"{data_name}_search_progress.png")
     plt.savefig(search_plot_path, dpi=300)
+    plt.close()
     print(f"📈 Search progress plot saved to: {search_plot_path}")
+
     # ==========================================
     # 6. Results & Saving
     # ==========================================
@@ -326,6 +338,7 @@ def main():
 
     metrics_data = {
         "dataset": data_name,
+        "num_datapoint": len(X),
         "test_r2": r2_test,
         "best_params": search.best_params_,
         "symbolic_formula": str(formula)
@@ -380,7 +393,7 @@ def main():
     plot_path_tot = os.path.join(savepath, f"{data_name}_scores_global.png")
     plt.tight_layout()
     plt.savefig(plot_path_tot, dpi=300)
-    plt.show()
+    plt.close()
 
     # Ensure scores_tot is a flat 1D array
     if len(scores_tot.shape) > 1:
