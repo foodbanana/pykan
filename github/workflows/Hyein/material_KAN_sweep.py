@@ -228,7 +228,7 @@ def main():
     print(f"# of data after removing outliers: {len(df_in_final)} ({removed_count} removed)")
 
     if "CO2H" in data_name:
-        EXCLUDE_COLS = ['x7', 'x9', 'x16']
+        EXCLUDE_COLS = ['F_S220', 'P_V100', 'F_S220.1']
         for col in EXCLUDE_COLS:
             if col in name_X:
                 name_X.remove(col)
@@ -318,6 +318,7 @@ def main():
     # 6. Results & Saving
     # ==========================================
     best_estimator = search.best_estimator_
+    # best_cv_r2 = search.best_score_
     best_kan_model = best_estimator.model
 
     print("\n" + "=" * 40)
