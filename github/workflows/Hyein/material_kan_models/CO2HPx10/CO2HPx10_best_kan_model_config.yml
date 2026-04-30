@@ -15,22 +15,22 @@ sb_trainable: true
 sp_trainable: true
 state_id: 1
 symbolic.funs_name.0:
-- - x^4
-  - exp
-  - 1/x^2
-  - tanh
-  - 1/x^2
-  - 1/x^2
-  - 1/x^2
-  - 1/x^2
-  - sin
-  - tanh
+- - 1/x
   - x^3
-  - exp
-  - exp
-  - exp
   - 1/x^2
-  - exp
+  - tanh
+  - x^4
+  - x^4
+  - 1/x^2
+  - x^4
+  - 1/x^2
+  - 1/x^2
+  - tanh
+  - 1/x^2
+  - 1/x^2
+  - x^3
+  - x^4
+  - 1/x^2
 symbolic_enabled: true
 width:
 - - 16

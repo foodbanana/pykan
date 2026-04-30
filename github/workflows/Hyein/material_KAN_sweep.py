@@ -275,8 +275,8 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=100,
-        cv=3,
+        n_iter=200,
+        cv=5,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
         verbose=3,
