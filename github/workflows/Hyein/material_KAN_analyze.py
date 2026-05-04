@@ -101,12 +101,6 @@ def main():
     removed_count = len(df_in) - len(df_in_final)
     print(f"# of data after removing outliers: {len(df_in_final)} ({removed_count} removed)")
 
-    if "CO2H" in data_name:
-        EXCLUDE_COLS = ['F_S220', 'P_V100', 'F_S220.1']
-        for col in EXCLUDE_COLS:
-            if col in name_X:
-                name_X.remove(col)
-
     X = df_in_final[name_X].values
     y = df_out_final[name_y].values.reshape(-1, 1)
 

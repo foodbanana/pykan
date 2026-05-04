@@ -12,7 +12,6 @@ from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import MinMaxScaler
 
-from github.workflows.Hyein.data.co2_hydrogenation.reorganize import EXCLUDE_COLS
 from kan.custom_processing import remove_outliers_iqr
 
 # Import KAN
@@ -226,12 +225,6 @@ def main():
 
     removed_count = len(df_in) - len(df_in_final)
     print(f"# of data after removing outliers: {len(df_in_final)} ({removed_count} removed)")
-
-    if "CO2H" in data_name:
-        EXCLUDE_COLS = ['F_S220', 'P_V100', 'F_S220.1']
-        for col in EXCLUDE_COLS:
-            if col in name_X:
-                name_X.remove(col)
 
     X = df_in_final[name_X].values
     y = df_out_final[name_y].values.reshape(-1, 1)
