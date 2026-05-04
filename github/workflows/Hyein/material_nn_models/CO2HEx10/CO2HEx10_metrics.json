@@ -3,7 +3,7 @@
     "test_r2": 0.974814171906714,
     "best_params": {
         "solver": "lbfgs",
-        "learning_rate_init": 0.001,
+        "learning_rate_init": 0.01,
         "hidden_layer_sizes": [
             128
         ],
