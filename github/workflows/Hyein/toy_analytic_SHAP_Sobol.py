@@ -191,6 +191,14 @@ STANDARD_ZOO = {
         "names": ["Quadratic (x0)", "Parabolic (x1)"],
         "mask_idx": None,
         "mask_division": []
+    },
+    "ishigami": {
+        "func": lambda x: np.sin(x[0] * np.pi) + 7 * np.sin(x[1] * np.pi) ** 2 + \
+                          0.05 * (x[2] * np.pi)**4 * np.sin(x[0] * np.pi),  # Sobol' and Levitan (1999)
+        "bounds": [[-1, 1], [-1, 1], [-1, 1]],
+        "names": ["Primary (x0)", "Oscillator (x1)", "Zero-effect (x2)"],
+        "mask_idx": None,
+        "mask_division": []
     }
 }
 FUNCTION_ZOO = {**STANDARD_ZOO, **LOG_SUM_ZOO, **CONVEX_ZOO}
