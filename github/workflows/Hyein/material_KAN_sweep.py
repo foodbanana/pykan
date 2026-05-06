@@ -269,7 +269,7 @@ def main():
         estimator=kan_wrapper,
         param_distributions=param_distributions,
         n_iter=200,
-        cv=5,
+        cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
         verbose=3,
