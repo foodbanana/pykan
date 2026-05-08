@@ -1,0 +1,13 @@
+{
+    "dataset": "ITHH4500",
+    "test_r2": 0.7367630155953704,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.01,
+        "hidden_layer_sizes": [
+            128
+        ],
+        "alpha": 1.0,
+        "activation": "relu"
+    }
+}
