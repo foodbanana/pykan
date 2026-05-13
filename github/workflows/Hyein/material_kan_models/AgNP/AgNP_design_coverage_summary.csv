@@ -1,0 +1,2 @@
+n_train,n_design,bounding_box_coverage,convex_hull_coverage,nn_distance_ratio,median_train_nn_dist,median_design_nn_dist
+2636,7168,0.3291015625,0.04840959821428571,322116091877.06213,0.0,0.32211609187706214
