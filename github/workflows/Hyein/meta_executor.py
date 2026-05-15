@@ -5,25 +5,25 @@ def main():
     target_scripts = [
         # "github/workflows/Hyein/material_KAN_sweep.py",
         "github/workflows/Hyein/material_KAN_analyze.py",
-        # "github/workflows/Hyein/material_KAN_SALib.py",
+        "github/workflows/Hyein/material_KAN_SALib.py",
         # "github/workflows/Hyein/material_KAN_SHAP.py",
         # "github/workflows/Hyein/material_NN_tuning.py",
         # "github/workflows/Hyein/material_NN_SHAP.py",
         # "github/workflows/Hyein/material_NN_for_KANrange.py",
     ]
     target_data = [
-        'AgNP',
-        'CO2RRLCA',
-        'CO2RRNPV',
-        'CO2RRMSP',
-        'CO2HPx10',
-        'CO2HEx10', # v2: 3 variables are excluded / v3: x9 & x16 excluded
-        'ITH4500',
-        'ITHH4500',
+        # 'AgNP',
+        # 'CO2RRLCA',
+        # 'CO2RRNPV',
+        # 'CO2RRMSP',
+        # 'CO2HPx10',
+        # 'CO2HEx10', # v2: 3 variables are excluded / v3: x9 & x16 excluded
+        # 'ITH4500',
+        # 'ITHH4500',
         # 'CO2RRCC', 'CO2RRRA', 'CO2RRC', 'CO2RRA', 'CO2RREE', 'CO2RRCA',
         # 'CO2RRE', 'CO2RRRC', 'CO2RRUR',
-        # 'AutoAM', 'Perovskite',
-        # 'P3HT', 'CrossedBarrel',
+        'AutoAM', 'Perovskite',
+        'P3HT', 'CrossedBarrel',
         # 'MofEtotal'
     ]
     rand_seed = []
