@@ -31,17 +31,30 @@ except AttributeError:
 from github.workflows.Hyein.toy_KAN_sweep import KANRegressor
 from kan.experiments.analysis import find_indices_sign_revert
 
+# ==========================================
+# SALib import — legacy Saltelli sampler.
+# The legacy `SALib.sample.saltelli.sample` is deterministic (low-discrepancy
+# sequence) and does not accept a `seed` argument; the modern
+# `SALib.sample.sobol.sample` does. We use the legacy module here.
+# ==========================================
+from SALib.sample.saltelli import sample as saltelli_sample
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
+    parser = argparse.ArgumentParser(description="Run KAN attribution analysis (Saltelli-sampled).")
     parser.add_argument("data_name", type=str, nargs='?', default="CO2HEx10",
                         help="The name of the dataset")
     parser.add_argument("rand_seed", type=int, nargs='?', default=None,
                         help="The random seed (default: None=42)")
+    parser.add_argument("--n_samples", type=int, default=1024,
+                        help="Saltelli base sample size N (default: 1024). "
+                             "Matches the --n_samples in material_KAN_SHAP.py so the "
+                             "two analyses see identical input designs.")
 
     args = parser.parse_args()
     data_name = args.data_name
     rand_seed = args.rand_seed
+    n_samples = args.n_samples
 
     if "CO2RR" in data_name:
         data_on_contour = False
@@ -124,7 +137,35 @@ def main():
     }
 
     # ==========================================
-    # 2.5 Plot Input vs Output
+    # 2.4 Saltelli Design — used as input for all KAN attribution scoring
+    # ------------------------------------------
+    # Mirrors the Saltelli sampling in material_KAN_SHAP.py so the KAN-based
+    # attribution and the SALib Sobol' indices are computed on the same
+    # input design. Bounds are [0, 1]^p (MinMax-scaled feature space); base
+    # sample size N defaults to 1024.
+    #
+    # NOTE: this is the design used for global and per-range KAN attribution
+    # scoring below (where model.feature_score is read). The input-vs-output,
+    # parity, and contour plots continue to use the real training/test data
+    # because those plots are about checking model fit to observed data.
+    # ==========================================
+    n_features = X_train_denorm.shape[1]
+
+    problem = {
+        'num_vars': n_features,
+        'names':    list(feat_names),
+        'bounds':   [[0.0, 1.0]] * n_features,
+    }
+    saltelli_param = saltelli_sample(
+        problem, n_samples,
+        calc_second_order=False,
+    )
+    saltelli_input = torch.tensor(saltelli_param, dtype=torch.float32, device=device)
+    print(f"🎲 Saltelli design: {saltelli_input.shape[0]} samples "
+          f"(N={n_samples}, p={n_features}); used for KAN attribution scoring.")
+
+    # ==========================================
+    # 2.5 Plot Input vs Output (kept on real training data)
     # ==========================================
     pred_y_norm = model(dataset['train_input']).detach().cpu().numpy()
     try:
@@ -132,7 +173,6 @@ def main():
     except ValueError:
         pred_y = pred_y_norm
 
-    n_features = X_train_denorm.shape[1]
     n_cols = 2
     n_rows = (n_features + n_cols - 1) // n_cols
 
@@ -156,7 +196,14 @@ def main():
     plt.savefig(os.path.join(savepath, f"{data_name}_input_vs_output.png"), dpi=300)
     # plt.show()
 
-    model.forward(dataset['train_input'])
+    # ==========================================
+    # 2.6 Global KAN attribution — forwarded on the Saltelli design so the
+    # feature_score is computed over the same input distribution as the
+    # SALib Sobol' analysis. The spline pre-/post-activations populated by
+    # this forward pass are then consumed by the inflection-point analysis
+    # in section 3 (so those plots also reflect the Saltelli sampling).
+    # ==========================================
+    model.forward(saltelli_input)
     scores_tot = model.feature_score.detach().cpu().numpy()
     model.plot()
     plt.savefig(os.path.join(savepath, f"{data_name}_model.png"))
@@ -268,6 +315,10 @@ def main():
 
     # ==========================================
     # 4. Multi-Feature Range-Based Slicing
+    # ------------------------------------------
+    # Masks are now built and scored on the Saltelli design instead of the
+    # training set, so the per-range KAN attribution is computed over the
+    # same uniform [0, 1]^p coverage as the SALib Sobol' indices.
     # ==========================================
 
     # Settings
@@ -294,7 +345,7 @@ def main():
             continue
 
         mask_interval = [0.1] + unique_ips + [0.9]
-        x_mask_data = dataset['train_input'][:, mask_idx]
+        x_mask_data = saltelli_input[:, mask_idx]
 
         current_feat_masks = []
         current_feat_labels = []
@@ -321,7 +372,7 @@ def main():
     if not selected_features_data:
         print("⚠️ Warning: No valid splitting features found. Defaulting to top feature (All Range).")
         fallback_idx = sorted_feat_indices[0]
-        x_mask_data = dataset['train_input'][:, fallback_idx]
+        x_mask_data = saltelli_input[:, fallback_idx]
         final_masks = [(x_mask_data > -np.inf)]
         final_labels = [f"All Range"]
         selected_features_indices = [fallback_idx]
@@ -347,19 +398,19 @@ def main():
 
         print(f"   -> Generated {len(final_masks)} non-empty combined regions.")
 
-    # Calculate scores for final masks
+    # Calculate scores for final masks (on Saltelli samples)
     print(f"\n✂️ Scoring {len(final_masks)} regions...")
     scores_interval_norm = []
 
     for i, mask in enumerate(final_masks):
-        x_tensor_masked = dataset['train_input'][mask, :]
+        x_tensor_masked = saltelli_input[mask, :]
         x_std = torch.std(x_tensor_masked, dim=0).detach().cpu().numpy()
 
         model.forward(x_tensor_masked)
         score_masked = model.feature_score.detach().cpu().numpy()
         score_norm = score_masked / (x_std + 1e-6)
         scores_interval_norm.append(score_norm)
-        print(f"   Region {i + 1}: {mask.sum().item()} samples")
+        print(f"   Region {i + 1}: {mask.sum().item()} Saltelli samples")
 
     # ==========================================
     # 4.5 Save Range Split Data
@@ -369,6 +420,7 @@ def main():
 
     split_data = {
         'dataset': dataset,
+        'saltelli_input': saltelli_input.detach().cpu().numpy(),  # NEW: design used for scoring
         'masks': final_masks,  # UPDATED: Now saving the combined masks
         'labels': final_labels,  # UPDATED: Combined labels
         'selected_features_indices': selected_features_indices,  # UPDATED: List of indices
@@ -520,7 +572,7 @@ def main():
     df_scores.to_csv(score_csv_path, index=False)
 
     # ==========================================
-    # 7. Parity Plot
+    # 7. Parity Plot (kept on real test data)
     # ==========================================
 
     y_pred_test_norm = model.forward(dataset['test_input']).detach().numpy()
@@ -549,6 +601,11 @@ def main():
 
     # ==========================================
     # 8. Plot Input vs Output (Colored by Combined Range)
+    # ------------------------------------------
+    # NOTE: original training data is used here for the scatter context.
+    # The `final_masks` were built on the Saltelli design, so they cannot be
+    # applied directly to the training inputs — we recompute equivalent masks
+    # on the training set by reapplying the same interval bounds.
     # ==========================================
     print("\n📈 Plotting Input vs Output (Original Data Colored by Range)...")
 
@@ -558,9 +615,22 @@ def main():
     except ValueError:
         pred_y = pred_y_norm
 
+    # Re-derive masks on the training set using the same interval bounds
+    train_masks = []
+    for label in final_labels:
+        mask_train = torch.ones(dataset['train_input'].shape[0], dtype=torch.bool, device=device)
+        for feat_d in selected_features_data:
+            idx   = feat_d['index']
+            x_col = dataset['train_input'][:, idx]
+            for sub_label in feat_d['labels']:
+                if sub_label in label:
+                    parts = sub_label.split('<')
+                    lb, ub = float(parts[0]), float(parts[2])
+                    mask_train = mask_train & (x_col > lb) & (x_col <= ub)
+        train_masks.append(mask_train)
+
     cmap = plt.get_cmap('tab10')
-    # Use final_masks here
-    colors = [cmap(k % 10) for k in range(len(final_masks))]
+    colors = [cmap(k % 10) for k in range(len(train_masks))]
 
     n_features = X_train_denorm.shape[1]
     n_cols = 2
@@ -575,7 +645,7 @@ def main():
         ax.scatter(X_train_denorm[:, i], pred_y, alpha=0.15, c='gray', s=20, label='Prediction')
 
         # Foreground: Original Data Colored by Slice
-        for m_idx, (mask, label) in enumerate(zip(final_masks, final_labels)):
+        for m_idx, (mask, label) in enumerate(zip(train_masks, final_labels)):
             if torch.is_tensor(mask):
                 mask_np = mask.cpu().numpy().astype(bool)
             else:
@@ -846,79 +916,6 @@ def main():
     range_heatmap_path = os.path.join(savepath, f"{data_name}_range_attribution_heatmap.png")
     plt.tight_layout()
     plt.savefig(range_heatmap_path, dpi=300)
-    #
-    # # ==========================================
-    # # 11. Global Top-2 Dominance Map (FIXED COORDINATES)
-    # # ==========================================
-    # print("\n⚖️ Generating Global Top-2 Dominance Map with aligned coordinates...")
-    #
-    # # 1. Identify Global Ranks
-    # global_ranks = np.argsort(scores_tot)[::-1]
-    # g1_idx, g2_idx = global_ranks[0], global_ranks[1]
-    # g1_name, g2_name = feat_names[g1_idx], feat_names[g2_idx]
-    #
-    # # 2. Re-calculate deltas per region
-    # dominance_deltas_per_region = []
-    # for scores in scores_interval_norm:
-    #     dominance_deltas_per_region.append(scores[g1_idx] - scores[g2_idx])
-    #
-    # # 3. Map to Grid
-    # Z_dominance_flat = np.zeros(grid_res ** 2)
-    # # We need the normalized grid to match the interval logic (0.0 to 1.0)
-    # grid_coords_norm_torch = torch.tensor(scaler_X.transform(man_input_denorm),
-    #                                       dtype=torch.float32, device=device)
-    #
-    # for i, label in enumerate(final_labels):
-    #     mask_grid = torch.ones(grid_res ** 2, dtype=torch.bool, device=device)
-    #     for feat_d in selected_features_data:
-    #         idx = feat_d['index']
-    #         x_col = grid_coords_norm_torch[:, idx]
-    #         for sub_label in feat_d['labels']:
-    #             if sub_label in label:
-    #                 parts = sub_label.split('<')
-    #                 lb, ub = float(parts[0]), float(parts[2])
-    #                 mask_grid = mask_grid & (x_col > lb) & (x_col <= ub)
-    #     if torch.any(mask_grid):
-    #         Z_dominance_flat[mask_grid.cpu().numpy()] = dominance_deltas_per_region[i]
-    #
-    # Z_dominance = Z_dominance_flat.reshape(grid_res, grid_res)
-    #
-    # # 4. Plotting with Alignment Fix
-    # fig_dom, ax_dom = plt.subplots(figsize=(12, 8))
-    #
-    # # [FIX] Use X1_mesh and X2_mesh explicitly to ensure pcolormesh anchors
-    # # to the correct denormalized coordinates.
-    # limit = np.max(np.abs(Z_dominance))
-    # im = ax_dom.pcolormesh(X1_mesh, X2_mesh, Z_dominance,
-    #                        cmap='RdBu_r', vmin=-limit, vmax=limit,
-    #                        shading='nearest', alpha=0.8)  # 'nearest' helps alignment
-    #
-    # cbar = plt.colorbar(im, ax=ax_dom)
-    # cbar.set_label(f'Score Difference ({g1_name} - {g2_name})', rotation=270, labelpad=20)
-    #
-    # # Overlay points
-    # ax_dom.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx],
-    #                c='black', s=10, alpha=0.4, label='Data Points')
-    #
-    # # [FIX] Re-draw boundaries using the denormalized inflection points
-    # # Ensure these lines use the same scale as X1_mesh/X2_mesh
-    # for ip in f1_ips:
-    #     ax_dom.axvline(x=ip, color='black', linestyle='--', alpha=0.6, lw=1.5)
-    # for ip in f2_ips:
-    #     ax_dom.axhline(y=ip, color='black', linestyle='--', alpha=0.6, lw=1.5)
-    #
-    # ax_dom.set_title(f"Global Top-2 Dominance Map\nRed: {g1_name} Dominates | Blue: {g2_name} Dominates")
-    # ax_dom.set_xlabel(f1_name)
-    # ax_dom.set_ylabel(f2_name)
-    #
-    # # Ensure limits match the data range exactly to prevent "drifting" visuals
-    # ax_dom.set_xlim(x1_min, x1_max)
-    # ax_dom.set_ylim(x2_min, x2_max)
-    #
-    # plt.tight_layout()
-    # dom_map_path = os.path.join(savepath, f"{data_name}_global_dominance_map_aligned.png")
-    # plt.savefig(dom_map_path, dpi=300)
-    # plt.show()
 
     # ==========================================
     # 11. Global Top-2 Log-Ratio Map (log10(Rank 1 / Rank 2))

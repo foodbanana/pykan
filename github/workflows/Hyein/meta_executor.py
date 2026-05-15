@@ -4,18 +4,18 @@ import os
 def main():
     target_scripts = [
         # "github/workflows/Hyein/material_KAN_sweep.py",
-        # "github/workflows/Hyein/material_KAN_analyze.py",
-        "github/workflows/Hyein/material_KAN_SALib.py",
+        "github/workflows/Hyein/material_KAN_analyze.py",
+        # "github/workflows/Hyein/material_KAN_SALib.py",
         # "github/workflows/Hyein/material_KAN_SHAP.py",
         # "github/workflows/Hyein/material_NN_tuning.py",
         # "github/workflows/Hyein/material_NN_SHAP.py",
         # "github/workflows/Hyein/material_NN_for_KANrange.py",
     ]
     target_data = [
-        # 'AgNP',
-        # 'CO2RRLCA',
-        # 'CO2RRNPV',
-        # 'CO2RRMSP',
+        'AgNP',
+        'CO2RRLCA',
+        'CO2RRNPV',
+        'CO2RRMSP',
         'CO2HPx10',
         'CO2HEx10', # v2: 3 variables are excluded / v3: x9 & x16 excluded
         'ITH4500',

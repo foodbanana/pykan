@@ -1,9 +1,9 @@
 Feature,Global_Attribution_Score
-Current density (A/cm2),0.8347519
-Faradaic efficiency,0.5385013
-Electricity price (USD/kWh),0.08870684
-CO conversion,0.0002772345
-Voltage (V),2.730214e-05
-Capture energy (MJ/kgCO2),1.2033971e-05
-Membrane cost (USD/m2),5.5028104e-06
-Crossover rate,4.985024e-06
+Current density (A/cm2),0.8653381
+Faradaic efficiency,0.4935614
+Electricity price (USD/kWh),0.07973578
+CO conversion,0.00019938652
+Voltage (V),1.9116314e-05
+Capture energy (MJ/kgCO2),8.564686e-06
+Membrane cost (USD/m2),5.1390966e-06
+Crossover rate,4.6648333e-06
