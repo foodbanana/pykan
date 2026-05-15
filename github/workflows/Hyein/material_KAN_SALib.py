@@ -24,10 +24,7 @@ from github.workflows.Hyein.toy_KAN_sweep import KANRegressor
 # SALib imports — module layout changed between versions.
 # Try the modern path first; fall back to the legacy one.
 # ----------------------------------------------------------------------------
-try:
-    from SALib.sample.sobol import sample as saltelli_sample
-except ImportError:
-    from SALib.sample.saltelli import sample as saltelli_sample
+from SALib.sample.saltelli import sample as saltelli_sample
 from SALib.analyze.sobol import analyze as sobol_analyze
 import math
 
@@ -68,16 +65,31 @@ class KANPredictor:
             pass
 
     def predict(self, X):
-        """X: (n, p) numpy array of NORMALISED inputs. Returns (n,) numpy array."""
+        """X: (n, p) numpy array of NORMALISED inputs. Returns (n,) numpy array.
+
+        Single-row inputs (n=1) are temporarily padded to n=2 before the
+        forward pass.  This prevents a `std(): degrees of freedom <= 0`
+        UserWarning that fires inside the KAN when torch.std() is called over
+        a batch dimension of size 1 (e.g. during SHAP KernelExplainer's
+        coalition sampling).  Only the first row of the output is returned.
+        """
         if isinstance(X, torch.Tensor):
             X_t = X.to(device=self.device, dtype=torch.float32)
         else:
             X_t = torch.as_tensor(np.asarray(X), dtype=torch.float32, device=self.device)
+
+        # Pad single-row batches so internal std() calls have df >= 1
+        padded = X_t.shape[0] == 1
+        if padded:
+            X_t = X_t.repeat(2, 1)
+
         with torch.no_grad():
             y = self.model(X_t)
         if isinstance(y, torch.Tensor):
             y = y.detach().cpu().numpy()
-        return np.asarray(y).reshape(-1)
+        y = np.asarray(y).reshape(-1)
+
+        return y[:1] if padded else y
 
 
 # ==============================================================================
@@ -143,10 +155,10 @@ def salib_sobol_analysis(model, n_features, feature_names,
     }
 
     # ---- Saltelli sampling ---------------------------------------------------
+    np.random.seed(seed)
     param_values = saltelli_sample(
         problem, n_samples,
         calc_second_order=calc_second_order,
-        seed=seed,
     )
     print(f"ℹ️  Saltelli design: {param_values.shape[0]} evaluations "
           f"(N={n_samples}, D={n_features}, S2={'on' if calc_second_order else 'off'})")
@@ -203,6 +215,101 @@ def salib_sobol_analysis(model, n_features, feature_names,
         'Y':            Y,
         'problem':      problem,
     }
+
+
+# ==============================================================================
+# Saltelli-based SHAP background / evaluation generator
+# ------------------------------------------------------------------------------
+# KernelExplainer needs two things:
+#
+#   1. Background dataset — used to compute the baseline expectation E[f(X)].
+#      Replacing shap.kmeans(X_train) with a Saltelli design means the baseline
+#      integrates over the full [0,1]^p input space uniformly, rather than over
+#      the empirical training distribution.  This makes the resulting SHAP
+#      values consistent with the Sobol' analysis domain: both methods now ask
+#      "how much does feature i matter when inputs are drawn uniformly from the
+#      full normalised space?" rather than "...from the training data manifold?"
+#
+#   2. Evaluation dataset — the points at which SHAP values are computed.
+#      Using Saltelli points here gives globally-distributed attributions that
+#      are directly comparable feature-by-feature with Sobol' S1 values, rather
+#      than test-set-specific SHAP values that reflect wherever X_test happens
+#      to lie in the input space.
+#
+# Design sizes
+# ------------
+#   Each Saltelli call with base-N and calc_second_order=False produces
+#   N * (p + 2) rows.  Examples for p = 10:
+#       N=32  →  32 * 12  =  384 rows   (background, default)
+#       N=32  →  32 * 12  =  384 rows   (evaluation, then capped at max_eval)
+#
+# Computational note
+# ------------------
+#   KernelExplainer cost is O(n_eval × n_bg × nsamples_internal) where
+#   nsamples_internal defaults to 2*p + 2048.  Keep n_eval_base small (≤ 64)
+#   to avoid multi-hour runtimes on large p.  The two designs use seeds that
+#   differ by 1 so background ∩ evaluation = ∅.
+# ==============================================================================
+
+def saltelli_shap_data(n_features, feature_names,
+                       n_bg_base=32, n_eval_base=32,
+                       max_eval_points=300,
+                       seed=42,
+                       bounds_lo=0.0, bounds_hi=1.0):
+    """
+    Generate Saltelli-sampled background and evaluation arrays for SHAP
+    KernelExplainer.
+
+    Parameters
+    ----------
+    n_features      : int
+    feature_names   : list[str]
+    n_bg_base       : int  Saltelli base-N for background.
+                      Actual rows = n_bg_base * (p + 2).
+    n_eval_base     : int  Saltelli base-N for evaluation set.
+                      Actual rows = n_eval_base * (p + 2), then capped at
+                      max_eval_points.
+    max_eval_points : int  Hard cap on evaluation rows (speed guard).
+    seed            : int  RNG seed; background uses seed, evaluation uses
+                      seed+1 to avoid overlap.
+    bounds_lo/hi    : float  Input bounds (default [0, 1] for MinMax-scaled data).
+
+    Returns
+    -------
+    X_bg   : np.ndarray  shape (n_bg_base * (p+2),  p)
+    X_eval : np.ndarray  shape (min(n_eval_base*(p+2), max_eval_points), p)
+    """
+    problem = {
+        'num_vars': n_features,
+        'names':    list(feature_names),
+        'bounds':   [[bounds_lo, bounds_hi]] * n_features,
+    }
+
+    # Background — seed as given; calc_second_order=False keeps it N*(p+2) rows
+    # np.random.seed() is used for SALib < 1.4 compatibility; newer versions
+    # also accept a `seed` keyword directly, but the global seed approach works
+    # across all versions.
+    np.random.seed(seed)
+    X_bg = saltelli_sample(
+        problem, n_bg_base,
+        calc_second_order=False,
+    )
+
+    # Evaluation — seed+1 so the two designs don't overlap
+    np.random.seed(seed + 1)
+    X_eval_full = saltelli_sample(
+        problem, n_eval_base,
+        calc_second_order=False,
+    )
+    # Cap rows so KernelExplainer stays tractable
+    X_eval = X_eval_full[:max_eval_points]
+
+    print(f"ℹ️  Saltelli SHAP background : {X_bg.shape[0]} points "
+          f"(N_base={n_bg_base}, p={n_features})")
+    print(f"ℹ️  Saltelli SHAP evaluation : {X_eval.shape[0]} points "
+          f"(N_base={n_eval_base}, cap={max_eval_points})")
+
+    return X_bg, X_eval
 
 
 def plot_sobol_with_ci(feature_names, S1, ST, S1_ci, ST_ci, title, savepath):
@@ -620,25 +727,71 @@ def main():
     print(f"Input vs Output plot saved to: {input_vs_output_path}")
 
     # ==========================================
-    # 3. SHAP Analysis
+    # 3. SHAP Analysis  (Saltelli background + evaluation)
+    # ------------------------------------------
+    # Both the background and evaluation sets are drawn from a Saltelli
+    # low-discrepancy design over [0, 1]^p, matching the input domain used
+    # by the Sobol' analysis in Section 4.  This ensures that SHAP attributions
+    # and Sobol' indices are computed over the same distribution, making the
+    # two methods directly comparable.
+    #
+    # Background (X_bg_shap)
+    #   Replaces shap.kmeans(X_train).  A Saltelli design with n_bg_base rows
+    #   uniformly covers [0,1]^p, so the KernelExplainer baseline E[f(X)]
+    #   integrates over the full normalised input space rather than the
+    #   empirical training manifold.
+    #
+    # Evaluation (X_eval_shap)
+    #   Replaces X_test_norm.  SHAP values are now computed at Saltelli points
+    #   so that mean(|SHAP|) reflects global sensitivity rather than local
+    #   sensitivity at the test set locations.  The set is capped at
+    #   max_eval_points to keep KernelExplainer runtime tractable.
+    #
+    # Tuning
+    #   n_bg_base   controls background size  → n_bg_base * (p+2) rows
+    #   n_eval_base controls evaluation size  → n_eval_base * (p+2) rows,
+    #               then truncated to max_eval_points
     # ==========================================
-    n_bg_set        = 100
-    num_unique_rows = np.unique(X_temp_norm, axis=0).shape[0]
-    n_bg            = min(n_bg_set, num_unique_rows)
-    print(f"N of Background Data Points: {n_bg}")
+    n_bg_base_shap   = 64    # Saltelli base-N for background; actual rows = 64*(p+2).
+                             # Kept larger than n_bg_clusters so k-means has
+                             # enough points to form stable cluster centres.
+    n_bg_clusters    = 100   # k-means cluster centres used as the final background
+    n_eval_base_shap = 64    # actual eval rows = 32 * (p + 2), capped below
+    max_eval_shap    = 2048  # hard cap on evaluation rows
 
-    X_bg   = shap.kmeans(X_temp_norm, n_bg) if n_bg < num_train_data else X_temp_norm
-    X_eval = X_test_norm
+    print(f"\nBuilding Saltelli SHAP background & evaluation "
+          f"(p={n_features}, bg_base={n_bg_base_shap}, k={n_bg_clusters}, "
+          f"eval_base={n_eval_base_shap}, eval_cap={max_eval_shap})...")
 
-    explainer   = shap.KernelExplainer(loaded_model.predict, X_bg)
-    shap_values = explainer.shap_values(X_eval)
+    X_bg_saltelli, X_eval_shap = saltelli_shap_data(
+        n_features      = n_features,
+        feature_names   = feature_names,
+        n_bg_base       = n_bg_base_shap,
+        n_eval_base     = n_eval_base_shap,
+        max_eval_points = max_eval_shap,
+        seed            = rand_seed,
+        bounds_lo       = 0.0,
+        bounds_hi       = 1.0,
+    )
+
+    # Distil the Saltelli background to k-means cluster centres.
+    # shap.kmeans returns a DenseData object (cluster centres + weights
+    # proportional to cluster size), which KernelExplainer accepts natively.
+    # This keeps the background compact while preserving the uniform [0,1]^p
+    # coverage provided by the Saltelli design.
+    X_bg_shap = shap.kmeans(X_bg_saltelli, n_bg_clusters)
+    print(f"ℹ️  SHAP background after k-means: {n_bg_clusters} cluster centres "
+          f"(from {X_bg_saltelli.shape[0]} Saltelli points)")
+
+    explainer   = shap.KernelExplainer(loaded_model.predict, X_bg_shap)
+    shap_values = explainer.shap_values(X_eval_shap)
 
     shap_raw_df = pd.DataFrame(shap_values, columns=feature_names)
     shap_raw_df.to_csv(os.path.join(savepath, f'{data_name}_shap_values_raw.csv'), index=False)
 
     mean_shap     = np.array(shap_values).mean(axis=0)
     abs_mean_shap = np.abs(mean_shap)
-    mean_avg_shap = np.abs(shap_values.mean(axis=0))
+    mean_avg_shap = np.abs(shap_values).mean(axis=0)
 
     shap_summary_df = pd.DataFrame({
         'Feature':       feature_names,
@@ -661,7 +814,8 @@ def main():
         color='thistle'
     )
 
-    shap.summary_plot(shap_values, X_eval, feature_names=feature_names, show=False)
+    # summary_plot uses X_eval_shap for the feature-value colour axis
+    shap.summary_plot(shap_values, X_eval_shap, feature_names=feature_names, show=False)
     plt.savefig(os.path.join(savepath, f'{data_name}_shap_dot_plot.png'),
                 dpi=300, bbox_inches='tight')
     plt.close()
