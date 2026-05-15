@@ -735,7 +735,7 @@ def main():
     # ---- Save raw Saltelli design + outputs (handy for debugging / reuse) ----
     raw_df = pd.DataFrame(sobol_results['param_values'], columns=feature_names)
     raw_df['Y'] = sobol_results['Y']
-    raw_csv_path = os.path.join(savepath, f"{data_name}_saltelli_design.csv")
+    raw_csv_path = os.path.join(savepath, f"{data_name}_saltelli_design_salib.csv")
     raw_df.to_csv(raw_csv_path, index=False)
     print(f"Saltelli design + outputs saved to: {raw_csv_path}")
 
@@ -761,7 +761,7 @@ def main():
         values=results_df['S1'],
         title=f"Sobol Sensitivity — SALib Saltelli (KAN) - {data_name}",
         ylabel="First Order Index (S1)",
-        savepath=os.path.join(savepath, f"{data_name}_kan_sobol_S1_plot.png"),
+        savepath=os.path.join(savepath, f"{data_name}_kan_sobol_S1_plot_salib.png"),
         color='bisque'
     )
 
@@ -771,7 +771,7 @@ def main():
         S1=S1, ST=ST,
         S1_ci=S1_ci, ST_ci=ST_ci,
         title=f"Sobol Indices with 95% CI — SALib Saltelli (KAN) - {data_name}",
-        savepath=os.path.join(savepath, f"{data_name}_kan_sobol_S1_ST_ci_plot.png")
+        savepath=os.path.join(savepath, f"{data_name}_kan_sobol_S1_ST_ci_plot_salib.png")
     )
 
     # ---- Plot 3: S2 heatmap ----
@@ -781,7 +781,7 @@ def main():
             S2=S2,
             S2_ci=S2_ci,
             title=f"Second-Order Sobol Indices S2 — SALib Saltelli (KAN) - {data_name}",
-            savepath=os.path.join(savepath, f"{data_name}_kan_sobol_S2_heatmap.png")
+            savepath=os.path.join(savepath, f"{data_name}_kan_sobol_S2_heatmap_salib.png")
         )
 
 

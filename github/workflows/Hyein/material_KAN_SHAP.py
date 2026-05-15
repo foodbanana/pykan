@@ -357,8 +357,8 @@ def main():
                         help="The name of the dataset (default: ITH4500)")
     parser.add_argument("rand_seed", type=int, nargs='?', default=None,
                         help="The random seed (default: None=42)")
-    parser.add_argument("--n_bootstrap", type=int, default=200,
-                        help="Number of bootstrap resamples for Owen Sobol estimator (default: 200)")
+    parser.add_argument("--n_bootstrap", type=int, default=4096,
+                        help="Number of bootstrap resamples for Owen Sobol estimator (default: 4096)")
 
     args = parser.parse_args()
     data_name   = args.data_name
@@ -446,6 +446,7 @@ def main():
     # training time and we want consistent inputs to the pretrained model.
     X_temp_norm = scaler_X.transform(X_temp_denorm)
     X_test_norm = scaler_X.transform(X_test_denorm)
+    X_norm = scaler_X.transform(X)
 
     # ==========================================
     # 2.5 Parity Plot (Actual vs Predicted)
@@ -522,7 +523,7 @@ def main():
     print(f"N of Background Data Points: {n_bg}")
 
     X_bg   = shap.kmeans(X_temp_norm, n_bg) if n_bg < num_train_data else X_temp_norm
-    X_eval = X_test_norm
+    X_eval = X_norm     #TODO: Try with 1000 data points if it is not good enough
 
     explainer   = shap.KernelExplainer(loaded_model.predict, X_bg)
     shap_values = explainer.shap_values(X_eval)
