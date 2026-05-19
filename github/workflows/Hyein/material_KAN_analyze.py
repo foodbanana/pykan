@@ -57,7 +57,7 @@ def main():
     n_samples = args.n_samples
 
     if "CO2RR" in data_name:
-        data_on_contour = False
+        data_on_contour = True
     else:
         data_on_contour = True
 
@@ -735,7 +735,8 @@ def main():
     cbar = fig.colorbar(cp, ax=ax, label=name_y)
     cbar.set_label(name_y, fontsize=12)
     if data_on_contour:
-        ax.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
+        ax.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx],
+                   facecolors='none', edgecolors='black', linewidths=0.5, s=10, alpha=0.4)
         ax.set_xlim([x1_min, x1_max])
         ax.set_ylim([x2_min, x2_max])
 
@@ -810,7 +811,8 @@ def main():
             for ax_t, Z_plot, title in zip(axs, z_data_list, titles):
                 cp = ax_t.contourf(X1_mesh, X2_mesh, Z_plot, levels=30, cmap='RdYlBu_r', alpha=0.8)
                 fig.colorbar(cp, ax=ax_t, label=name_y)
-                ax_t.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
+                ax_t.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx],
+                             facecolors='none', edgecolors='black', linewidths=0.5, s=10, alpha=0.4)
                 for ip in f1_ips: ax_t.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
                 for ip in f2_ips: ax_t.axhline(y=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
                 ax_t.set_title(f"{title}\n{f1_name} vs {f2_name}")
@@ -900,7 +902,8 @@ def main():
 
     # Overlay original data points
     if data_on_contour:
-        ax_range.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
+        ax_range.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx],
+                         facecolors='none', edgecolors='black', linewidths=0.5, s=10, alpha=0.4)
         ax_range.set_xlim([x1_min, x1_max])
         ax_range.set_ylim([x2_min, x2_max])
 
@@ -971,7 +974,8 @@ def main():
     # Overlay points and boundaries
     if data_on_contour:
         ax_log.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx],
-                   c='black', s=10, alpha=0.3, label='Data Points')
+                       facecolors='none', edgecolors='black', linewidths=0.5, s=12, alpha=0.5,
+                       label='Data Points')
         ax_log.set_xlim([x1_min, x1_max])
         ax_log.set_ylim([x2_min, x2_max])
 
