@@ -12,8 +12,8 @@ def main():
         # "github/workflows/Hyein/material_NN_for_KANrange.py",
     ]
     target_data = [
-        # 'AgNP',
-        'CrossedBarrel',
+        'AgNP',
+        # 'CrossedBarrel', 'P3HT',
         'CO2RRLCA',
         'CO2RRNPV',
         'CO2RRMSP',
