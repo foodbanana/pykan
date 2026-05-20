@@ -3,9 +3,9 @@ import os
 
 def main():
     target_scripts = [
-        "github/workflows/Hyein/material_KAN_sweep.py",
+        # "github/workflows/Hyein/material_KAN_sweep.py",
         "github/workflows/Hyein/material_KAN_analyze.py",
-        "github/workflows/Hyein/material_KAN_SALib.py",
+        # "github/workflows/Hyein/material_KAN_SALib.py",
         # "github/workflows/Hyein/material_KAN_SHAP.py",
         # "github/workflows/Hyein/material_NN_tuning.py",
         # "github/workflows/Hyein/material_NN_SHAP.py",
@@ -13,11 +13,12 @@ def main():
     ]
     target_data = [
         # 'AgNP',
-        # 'CO2RRLCA',
-        # 'CO2RRNPV',
-        # 'CO2RRMSP',
-        # 'CO2HPx10',
-        # 'CO2HEx10', # v2: 3 variables are excluded / v3: x9 & x16 excluded
+        'CrossedBarrel',
+        'CO2RRLCA',
+        'CO2RRNPV',
+        'CO2RRMSP',
+        'CO2HPx10',
+        'CO2HEx10', # v2: 3 variables are excluded / v3: x9 & x16 excluded
         'CO2AH4500',
         'CO2AR4500',
         # 'CO2RRCC', 'CO2RRRA', 'CO2RRC', 'CO2RRA', 'CO2RREE', 'CO2RRCA',
@@ -40,7 +41,7 @@ def main():
     #     # "github/workflows/Hyein/toy_NN_SHAP_Sobol.py",
     # ]
     # target_data = [
-    #     'ishigami', 'rosenbrock',     #TODO: Try with these classical examples
+    #     'ishigami', 'rosenbrock',
     #     # 'convolution', 'original', 'mult_periodic',
     #     'exponential', 'logarithm',
     #     # 'multiplication', 'conditional'

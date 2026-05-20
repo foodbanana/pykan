@@ -217,19 +217,22 @@ def main():
     ni, no = act.coef.shape[:2]
     coef = act.coef.tolist()
     depth = len(model.act_fun)
-    inflection_points_per_input = []
+    # Pre-allocate indexed by original feature; downstream code uses inflection_points_per_input[mask_idx]
+    inflection_points_per_input = [None] * ni
+    # Sort columns by global attribution score: x0 = most sensitive
+    sort_order_act = np.argsort(scores_tot)[::-1]
 
     fig_eval, axs_eval = plt.subplots(nrows=no, ncols=ni, squeeze=False, figsize=(max(3 * ni, 6), max(2.5 * no, 3.5)),
                             constrained_layout=True)
     fig_spline, axs_spline = plt.subplots(nrows=no, ncols=ni, squeeze=False, figsize=(max(3 * ni, 6), max(2.5 * no, 3.5)),
                             constrained_layout=True)
 
-    for i in range(ni):
+    for col_pos, i in enumerate(sort_order_act):
         knot_points_actual = act.grid[i, model.k - 1:-2].cpu().detach().numpy()
         feature_inflections_all = []
         for j in range(no):
-            ax = axs_eval[j, i]
-            ax2 = axs_spline[j, i]
+            ax = axs_eval[j, col_pos]
+            ax2 = axs_spline[j, col_pos]
             inputs = model.spline_preacts[l][:, j, i].cpu().detach().numpy()
             outputs = model.spline_postacts[l][:, j, i].cpu().detach().numpy()
             coef_node = coef[i][j]
@@ -294,12 +297,12 @@ def main():
 
                     first_vline = False  # Subsequent lines will be ignored by legend
 
-            ax.set_title(f'in {i} -> out {j}', fontsize=9)
-            ax2.set_title(f'in {i} -> out {j}', fontsize=9)
+            ax.set_title(f'x{col_pos}: {feat_names[i]} -> out {j}', fontsize=9)
+            ax2.set_title(f'x{col_pos}: {feat_names[i]} -> out {j}', fontsize=9)
             ax2.legend(loc='best', fontsize=7)
 
         feature_inflections = sorted(set(feature_inflections_all))
-        inflection_points_per_input.append(feature_inflections)
+        inflection_points_per_input[i] = feature_inflections
 
     # Save the first figure (activations)
     fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.png"), dpi=300)
@@ -438,25 +441,50 @@ def main():
     n_features_plot = scores_tot.shape[0]
     n_intervals = len(scores_interval_norm)
 
+    # Sort features by global attribution score: x0 = most sensitive
+    sort_order = np.argsort(scores_tot)[::-1]
+    indices_str = "_".join(map(str, selected_features_indices))
+    feat_names_sorted = [feat_names[i] for i in sort_order]
+    scores_interval_sorted = [s[sort_order] for s in scores_interval_norm]
+
+    feat_colors = [plt.get_cmap('RdYlBu')(x) for x in np.linspace(0.1, 0.9, n_features_plot)]
+
     # Dynamic figure size based on number of intervals
     fig, ax = plt.subplots(figsize=(max(10, n_intervals * 1.5), 6))
     x_positions = np.arange(n_intervals)
-    max_score = max([max(s) for s in scores_interval_norm]) if scores_interval_norm else 1.0
+    max_score = max([max(s) for s in scores_interval_sorted]) if scores_interval_sorted else 1.0
 
     for feat_idx in range(n_features_plot):
-        feat_scores = [s[feat_idx] for s in scores_interval_norm]
+        feat_scores = [s[feat_idx] for s in scores_interval_sorted]
         offset = (feat_idx - n_features_plot / 2) * width + width / 2
-        ax.bar(x_positions + offset, feat_scores, width, label=f"x{feat_idx}: {feat_names[feat_idx]}")
+        ax.bar(x_positions + offset, feat_scores, width,
+               color=feat_colors[feat_idx], edgecolor='black', linewidth=0.7, alpha=0.9,
+               label=f"x{feat_idx}: {feat_names_sorted[feat_idx]}")
 
     ax.set_xticks(x_positions)
-    # Truncate labels if too long for the plot
-    short_labels = [l if len(l) < 30 else l[:15] + "..." + l[-10:] for l in final_labels]
-    ax.set_xticklabels(short_labels, rotation=45, ha='right', fontsize=8)
+    # Each tick: "x{sorted}: lb-ub" per feature on separate lines
+    orig_to_sorted = {int(orig): pos for pos, orig in enumerate(sort_order)}
+    def _fmt_region(lbl):
+        parts = lbl.split(' & ')
+        lines = []
+        for p in parts:
+            tokens = p.split('<')          # [lb, 'xN', ub]
+            orig_idx = int(tokens[1][1:])  # 'xN' -> N
+            s_pos = orig_to_sorted[orig_idx]
+            lines.append(f"x{s_pos}: {tokens[0]}-{tokens[2]}")
+        return '\n'.join(lines)
+    ax.set_xticklabels([_fmt_region(l) for l in final_labels], rotation=0, ha='center', fontsize=8)
 
     ax.set_ylabel("Normalized Attribution Score")
-    # Join indices for the filename/title
-    indices_str = "_".join(map(str, selected_features_indices))
-    ax.set_title(f"Feature Importance per Range (Features {indices_str})")
+    # Title: show the border values used for splitting, mapped to sorted x-labels
+    border_parts = []
+    for d in selected_features_data:
+        sorted_pos = int(np.where(sort_order == d['index'])[0][0])
+        borders = [lbl.split('<')[2] for lbl in d['labels'][:-1]]
+        if borders:
+            border_parts.append(f"x{sorted_pos}=[{', '.join(borders)}]")
+    title_str = "Borders: " + ",  ".join(border_parts) if border_parts else "Feature Importance per Range"
+    ax.set_title(title_str)
     ax.legend(loc='upper right', bbox_to_anchor=(1, 1), fontsize='small')
     ax.set_ylim(0, max_score * 1.2)
     plt.tight_layout()
@@ -498,19 +526,16 @@ def main():
         # Create a fresh figure for each range
         fig_sep, ax_sep = plt.subplots(figsize=(4, 4))
 
-        # Get scores for this specific interval
-        current_interval_scores = scores_interval_norm[i]
+        # Get scores for this specific interval (sorted by global attribution)
+        current_interval_scores = scores_interval_sorted[i]
         x_pos_sep = np.arange(n_features_plot)
 
-        # Draw bars - using a distinct color map for clarity
-        colors = plt.cm.get_cmap('tab20', n_features_plot)
         ax_sep.bar(x_pos_sep, current_interval_scores, width=0.6,
-                   color=[colors(j) for j in range(n_features_plot)],
-                   edgecolor='black', alpha=0.8)
+                   color=feat_colors, edgecolor='black', linewidth=0.7, alpha=0.9)
 
         # Formatting
         ax_sep.set_xticks(x_pos_sep)
-        ax_sep.set_xticklabels(feat_names, rotation=45, ha='right', fontsize=9)
+        ax_sep.set_xticklabels(feat_names_sorted, rotation=45, ha='right', fontsize=9)
         ax_sep.set_ylabel("Normalized Attribution Score")
 
         current_label = final_labels[i]
