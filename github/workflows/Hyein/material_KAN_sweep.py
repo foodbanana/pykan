@@ -1,4 +1,5 @@
 import argparse
+import copy
 import os
 import joblib
 import json
@@ -129,6 +130,9 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                 self.model.prune(node_th=self.pruning_node_th, edge_th=self.pruning_edge_th)
             except Exception as e:
                 print(f"   ⚠️ Prunning failed (ignoring): {e}")
+
+        # Snapshot before symbolification
+        self.model_pre_symbolic = copy.deepcopy(self.model)
 
         # 4. Phase 3: Symbolic
         if self.symbolic_enabled:
@@ -277,7 +281,7 @@ def main():
     )
 
     print("\n🏎️  Starting Randomized Hyperparameter Search (KAN with Symbolic)...")
-    search.fit(X_norm, y_norm.ravel())
+    search.fit(X_train_norm, y_train_norm.ravel())
     # ==========================================
     # New: Visualize Search Progress
     # ==========================================
@@ -321,7 +325,16 @@ def main():
     y_pred_test_norm = best_estimator.predict(X_test_norm)
     r2_test = r2_score(y_test_norm, y_pred_test_norm)
 
-    print(f"📊 [Test Set]       R2 Score: {r2_test:.4f}")
+    print(f"📊 [Test Set] Post-symbolic R2: {r2_test:.4f}")
+
+    # R2 of pre-symbolic model
+    r2_pre_symbolic = None
+    if getattr(best_estimator, 'model_pre_symbolic', None) is not None:
+        X_test_tensor = torch.tensor(X_test_norm, dtype=torch.float32)
+        with torch.no_grad():
+            y_pred_pre = best_estimator.model_pre_symbolic.forward(X_test_tensor)
+        r2_pre_symbolic = r2_score(y_test_norm, y_pred_pre.detach().cpu().numpy().flatten())
+        print(f"📊 [Test Set]  Pre-symbolic R2: {r2_pre_symbolic:.4f}")
 
     # Output Symbolic Formula
     try:
@@ -333,6 +346,7 @@ def main():
     metrics_data = {
         "dataset": data_name,
         "num_datapoint": len(X),
+        "test_r2_pre_symbolic": r2_pre_symbolic,
         "test_r2": r2_test,
         "best_params": search.best_params_,
         "symbolic_formula": str(formula)
@@ -343,6 +357,9 @@ def main():
         json.dump(metrics_data, f, indent=4)
 
     # Save Models
+    if getattr(best_estimator, 'model_pre_symbolic', None) is not None:
+        best_estimator.model_pre_symbolic.saveckpt(
+            path=os.path.join(savepath, f'{data_name}_best_kan_model_pre_symbolic'))
     best_kan_model.saveckpt(path=os.path.join(savepath, f'{data_name}_best_kan_model'))
     joblib.dump(scaler_X, os.path.join(savepath, f'{data_name}_mlp_scaler_X.pkl'))
     joblib.dump(scaler_y, os.path.join(savepath, f'{data_name}_mlp_scaler_y.pkl'))
