@@ -123,6 +123,12 @@ def main():
     print(f"Train/Validation/Test : {len(X_train_denorm)} / {len(X_val_denorm)} / {len(X_test_denorm)}")
 
     feat_names = name_X
+    pretty_output_name = {
+        "loss": "Loss",
+        "minimum_selling_price": "Minimum selling price",
+        "NPV (USD)": "Net present value"
+    }
+    output_name = pretty_output_name.get(name_y, name_y)
 
     X_train_norm = scaler_X.fit_transform(X_train_denorm)
     y_train_norm = scaler_y.fit_transform(y_train_denorm)
@@ -757,8 +763,9 @@ def main():
     # --- Primary Plotting: Single Case (Always saved) ---
     fig, ax = plt.subplots(figsize=(5, 4))
     cp = ax.contourf(X1_mesh, X2_mesh, Z_mean, levels=30, cmap='RdYlBu_r', alpha=0.8)
-    cbar = fig.colorbar(cp, ax=ax, label=name_y)
-    cbar.set_label(name_y, fontsize=12)
+    cbar = fig.colorbar(cp, ax=ax, label=output_name)
+    cbar.set_label(output_name, fontsize=12, rotation=270, labelpad=20)
+
     if data_on_contour:
         ax.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx],
                    facecolors='none', edgecolors='black', linewidths=0.5, s=10, alpha=0.4)
@@ -835,7 +842,7 @@ def main():
 
             for ax_t, Z_plot, title in zip(axs, z_data_list, titles):
                 cp = ax_t.contourf(X1_mesh, X2_mesh, Z_plot, levels=30, cmap='RdYlBu_r', alpha=0.8)
-                fig.colorbar(cp, ax=ax_t, label=name_y)
+                fig.colorbar(cp, ax=ax_t, label=output_name)
                 ax_t.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx],
                              facecolors='none', edgecolors='black', linewidths=0.5, s=10, alpha=0.4)
                 for ip in f1_ips: ax_t.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
@@ -978,7 +985,7 @@ def main():
                 if sub_label in label:
                     parts = sub_label.split('<')
                     lb, ub = float(parts[0]), float(parts[2])
-                    mask_grid = mask_grid & (x_col > lb) & (x_col <= ub)
+                    mask_grid = mask_grid & (x_col >= lb) & (x_col <= ub)
         if torch.any(mask_grid):
             Z_log_ratio_flat[mask_grid.cpu().numpy()] = log_ratio_per_region[i]
 
@@ -994,7 +1001,7 @@ def main():
                            shading='nearest', alpha=0.8)
 
     cbar = plt.colorbar(im, ax=ax_log)
-    cbar.set_label(f'$\log_{{10}}$({g1_name} / {g2_name})', rotation=270, labelpad=20)
+    cbar.set_label('$\mathcal{R}(x,y)$', rotation=270, labelpad=20)
 
     # Overlay points and boundaries
     if data_on_contour:
@@ -1009,9 +1016,9 @@ def main():
     for ip in f2_ips:
         ax_log.axhline(y=ip, color='black', linestyle='--', alpha=0.4, lw=2.5)
 
-    ax_log.set_title(f"Red: {g1_name} | Blue: {g2_name}")
-    ax_log.set_xlabel(f1_name, fontsize=15)
-    ax_log.set_ylabel(f2_name, fontsize=15)
+    # ax_log.set_title(f"Red: {g1_name} | Blue: {g2_name}")
+    ax_log.set_xlabel(f"{f1_name}", fontsize=15)
+    ax_log.set_ylabel(f"{f2_name}", fontsize=15)
 
     # Fix boundaries
     ax_log.set_xlim(x1_min, x1_max)
