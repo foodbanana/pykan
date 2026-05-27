@@ -124,7 +124,7 @@ def main():
 
     feat_names = name_X
     pretty_output_name = {
-        "loss": "Loss",
+        "loss": "Spectrum fitness",
         "minimum_selling_price": "Minimum selling price",
         "NPV (USD)": "Net present value"
     }
