@@ -164,6 +164,13 @@ STANDARD_ZOO = {
         "mask_idx": 0,
         "mask_division": [-0.8]
     },
+    "log2": {
+        "func": lambda x: (np.log(20 * (x[0] + 1.2)) + x[1])**2,
+        "bounds": [[-1, 1], [-1, 1]],
+        "names": ["Log (x0)", "Linear (x1)"],
+        "mask_idx": 0,
+        "mask_division": [-0.8]
+    },
     "convolution": {
         "func": lambda x: x[0] ** 2 / (x[1] + 1.08) / 1.8,
         "bounds": [[-1, 1], [-1, 1]],

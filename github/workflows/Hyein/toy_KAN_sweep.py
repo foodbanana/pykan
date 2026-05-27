@@ -239,15 +239,16 @@ def main():
     # 5. Hyperparameter Tuning
     # ==========================================
     param_distributions = {
-        'n_layers': [1, 2],
-        'grid': [3, 5, 10],
+        'n_layers': [2],
+        'grid': [3],
         'k': [3],
-        'steps': [20, 50],
-        'lamb': [0.001, 0.01, 0.1, 1.],
-        'lamb_coef': [0, 0.01, 0.1, 1.0],  # Penalize large coefficients (sparsity)
-        'lamb_entropy': [0.001, 0.01, 0.1, 2.0, 10.0],  # Penalize complexity (for symbolic)
+        'steps': [20],
+        'lamb': [0.01],
+        'lamb_coef': [0.1],  # Penalize large coefficients (sparsity)
+        'lamb_coefdiff': [0.5,],  # Penalize large coefficients (sparsity)
+        'lamb_entropy': [0.1],  # Penalize complexity (for symbolic)
         'lr': [0.01, 0.1, 0.5, 1.],  # Learning rate for LBFGS
-        'sym_range': [10, 50]
+        'sym_range': [10]
     }
 
     # Pass default symbolic options here if you want to override defaults
