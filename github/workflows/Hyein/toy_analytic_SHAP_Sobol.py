@@ -141,8 +141,8 @@ def main():
 
     # Load scalers saved by toy_KAN_sweep.py
     kan_dir = os.path.join(root_dir, "kan_models")
-    scaler_X = joblib.load(os.path.join(kan_dir, f'{case_name}_mlp_scaler_X.pkl'))
-    scaler_y = joblib.load(os.path.join(kan_dir, f'{case_name}_mlp_scaler_y.pkl'))
+    scaler_X = joblib.load(os.path.join(kan_dir, f'{case_name}_scaler_X.pkl'))
+    scaler_y = joblib.load(os.path.join(kan_dir, f'{case_name}_scaler_y.pkl'))
 
     # model_func operates in scaled space: takes X in [0.1, 0.9], returns scaled y
     raw_func = lambda X: np.apply_along_axis(config["func"], 1, X)
@@ -167,47 +167,40 @@ def main():
     )
 
     # ==========================================
-    # 3. Run Range-Based Analysis (if configured)
+    # 3. Run Range-Based Analysis (from KAN inflection points)
     # ==========================================
-    mask_idx = config.get("mask_idx")
-    mask_divs = config.get("mask_division")
+    split_data_path = os.path.join(kan_dir, f'{case_name}_range_split_data.pkl')
 
-    if mask_idx is not None and mask_divs:
-        print(f"\n✂️ [2/2] Running RANGE Analysis (Split by Feature {mask_idx}: {feature_names[mask_idx]})...")
+    if os.path.exists(split_data_path):
+        split_data = joblib.load(split_data_path)
+        mask_idx = split_data.get('selected_mask_idx')
+        split_points = split_data.get('split_points')  # already in [0.1, 0.9] space
 
-        # Scale raw division points into [0.1, 0.9] space using scaler_X
-        def scale_point(val):
-            dummy = np.zeros((1, n_features))
-            dummy[0, mask_idx] = val
-            return scaler_X.transform(dummy)[0, mask_idx]
+        if mask_idx is not None and split_points and len(split_points) >= 2:
+            print(f"\n✂️ [2/2] Running RANGE Analysis (Split by Feature {mask_idx}: {feature_names[mask_idx]})...")
+            print(f"   Splitting points (scaled): {[f'{p:.3f}' for p in split_points]}")
 
-        feat_min, feat_max = 0.1, 0.9
-        valid_divs = sorted([scale_point(d) for d in mask_divs
-                             if feat_min < scale_point(d) < feat_max])
-        split_points = [feat_min] + valid_divs + [feat_max]
+            for i in range(len(split_points) - 1):
+                lb, ub = split_points[i], split_points[i + 1]
+                range_label = f"range_{i}_{lb:.2f}_to_{ub:.2f}"
 
-        print(f"   Splitting points (scaled): {[f'{p:.3f}' for p in split_points]}")
+                current_bounds = [list(b) for b in base_bounds]
+                current_bounds[mask_idx] = [lb, ub]
 
-        for i in range(len(split_points) - 1):
-            lb, ub = split_points[i], split_points[i + 1]
-            range_label = f"range_{i}_{lb:.2f}_to_{ub:.2f}"
+                print(f"   🔹 Processing Range {i}: {feature_names[mask_idx]} in [{lb:.2f}, {ub:.2f}]")
 
-            current_bounds = [list(b) for b in base_bounds]
-            current_bounds[mask_idx] = [lb, ub]
-
-            print(f"   🔹 Processing Range {i}: {feature_names[mask_idx]} in [{lb:.2f}, {ub:.2f}]")
-
-            run_analysis_suite(
-                model_func=model_func,
-                bounds=current_bounds,
-                feature_names=feature_names,
-                save_dir=root_dir,
-                suffix=f"_{range_label}",
-                title_suffix=f"\n({feature_names[mask_idx]}: {lb:.2f} ~ {ub:.2f})"
-            )
-
+                run_analysis_suite(
+                    model_func=model_func,
+                    bounds=current_bounds,
+                    feature_names=feature_names,
+                    save_dir=root_dir,
+                    suffix=f"_{range_label}",
+                    title_suffix=f"\n({feature_names[mask_idx]}: {lb:.2f} ~ {ub:.2f})"
+                )
+        else:
+            print("\nℹ️  No valid split found in range_split_data.pkl. Skipping range analysis.")
     else:
-        print("\nℹ️  No 'mask_idx' or 'mask_division' defined. Skipping range analysis.")
+        print(f"\nℹ️  range_split_data.pkl not found. Run toy_KAN_analyze.py first. Skipping range analysis.")
 
     print(f"\n✅ All analysis complete. Results saved in: {root_dir}")
 

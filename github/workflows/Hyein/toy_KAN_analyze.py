@@ -27,17 +27,58 @@ except AttributeError:
 # Import your wrapper and function ZOO
 from SALib.sample import sobol as saltelli
 from github.workflows.Hyein.toy_KAN_sweep import KANRegressor, FUNCTION_ZOO
-from kan.experiments.analysis import find_index_sign_revert
+from kan.experiments.analysis import find_indices_sign_revert
+
+
+SA_RC = {
+    'figure.dpi': 150,
+    'figure.facecolor': 'white',
+    'figure.autolayout': True,
+    'axes.facecolor': 'white',
+    'axes.edgecolor': '#444444',
+    'axes.linewidth': 0.8,
+    'axes.spines.top': True,
+    'axes.spines.right': True,
+    'axes.labelsize': 12,
+    'axes.labelcolor': 'black',
+    'axes.titlelocation': 'center',
+    'axes.grid': False,
+    'xtick.labelsize': 12,
+    'xtick.color': 'black',
+    'xtick.direction': 'out',
+    'ytick.labelsize': 10,
+    'ytick.color': 'black',
+    'ytick.direction': 'out',
+    'font.family': 'sans-serif',
+    'font.sans-serif': ['Helvetica Neue LT Pro', 'Helvetica Neue', 'Arial', 'DejaVu Sans'],
+    'font.size': 10,
+    'font.weight': '300',
+    'axes.labelweight': '500',
+    'text.color': 'black',
+    'patch.edgecolor': 'black',
+    'patch.linewidth': 0.7,
+    'patch.force_edgecolor': True,
+    'legend.fontsize': 8,
+    'legend.title_fontsize': 9,
+    'legend.framealpha': 0.0,
+    'legend.edgecolor': '#444444',
+    'lines.linewidth': 0.7,
+    'lines.markersize': 3,
+    'savefig.dpi': 150,
+    'savefig.bbox': 'tight',
+    'savefig.facecolor': 'white',
+}
 
 
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="exponential",
+    parser.add_argument("func_name", type=str, nargs='?', default="log2",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
 
     args = parser.parse_args()
     data_name = args.func_name
+    plt.rcParams.update(SA_RC)
     # ==========================================
     # 1. Setup Paths & Load Model/Scalers
     # ==========================================
@@ -45,8 +86,8 @@ def main():
     savepath = os.path.join(root_dir, "kan_models")
 
     ckpt_path = os.path.join(savepath, f'{data_name}_best_kan_model')
-    scaler_x_path = os.path.join(savepath, f'{data_name}_mlp_scaler_X.pkl')
-    scaler_y_path = os.path.join(savepath, f'{data_name}_mlp_scaler_y.pkl')
+    scaler_x_path = os.path.join(savepath, f'{data_name}_scaler_X.pkl')
+    scaler_y_path = os.path.join(savepath, f'{data_name}_scaler_y.pkl')
 
     print(f"📂 Loading results from: {savepath}")
 
@@ -164,83 +205,184 @@ def main():
     # plt.savefig(plot_path_tot, dpi=300)
     # plt.show()
 
-    model.plot()
-    plt.savefig(os.path.join(savepath, f"{data_name}_model.png"))
+    with plt.rc_context({'figure.autolayout': False}):
+        model.plot()
+        plt.savefig(os.path.join(savepath, f"{data_name}_model.png"))
+        plt.close()
 
     # ==========================================
     # 3. Inflection Point Analysis (Layer 0)
     # ==========================================
     print("\n🔍 Analyzing Inflection Points in Layer 0...")
-
-    depth = len(model.act_fun)
-    l = 0  # Analyze Layer 0
+    l = 0
     act = model.act_fun[l]
     ni, no = act.coef.shape[:2]
     coef = act.coef.tolist()
+    depth = len(model.act_fun)
+    # Pre-allocate indexed by original feature; downstream code uses inflection_points_per_input[mask_idx]
+    inflection_points_per_input = [None] * ni
+    sort_order_act = np.argsort(scores_tot)[::-1]
 
-    inflection_points_per_input = []  # Store list of inflection points for each input feature
+    fig_eval, axs_eval = plt.subplots(nrows=no, ncols=ni, squeeze=False,
+                                      figsize=(max(3 * ni, 6), max(2.5 * no, 3.5)),
+                                      constrained_layout=True)
+    fig_spline, axs_spline = plt.subplots(nrows=no, ncols=ni, squeeze=False,
+                                          figsize=(max(3 * ni, 6), max(2.5 * no, 3.5)),
+                                          constrained_layout=True)
 
-    fig, axs = plt.subplots(nrows=no, ncols=ni, squeeze=False,
-                            figsize=(max(2.5 * ni, 6), max(2.5 * no, 3.5)),
-                            constrained_layout=True)
-
-    for i in range(ni):  # For each input feature
-        feature_inflections = []
-        for j in range(no):  # For each output node of the layer
-            ax = axs[j, i]
-
-            # 1. Get Data
-            # Note: spline_preacts might not be populated unless update_grid_from_samples or similar was called during training/forward
-            # We assume model has tracked data. If not, we might need model.forward(dataset['train_input']) again.
+    for col_pos, i in enumerate(sort_order_act):
+        knot_points_actual = act.grid[i, model.k - 1:-2].cpu().detach().numpy()
+        feature_inflections_all = []
+        for j in range(no):
+            ax = axs_eval[j, col_pos]
+            ax2 = axs_spline[j, col_pos]
             inputs = model.spline_preacts[l][:, j, i].cpu().detach().numpy()
             outputs = model.spline_postacts[l][:, j, i].cpu().detach().numpy()
-
             coef_node = coef[i][j]
-            num_knot = act.grid.shape[1]
-            spline_radius = int((num_knot - len(coef_node)) / 2)
+            knot_indices = np.arange(len(coef_node))
 
-            # 2. Plot Activations
             rank = np.argsort(inputs)
-            ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1, label='Activations')
+            ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1, label='Activation function')
 
-            # 3. Plot Coefficients & Slope
-            ax2 = ax.twinx()
-            # Plot coefficients (control points)
-            ax2.scatter(act.grid[i, spline_radius:-spline_radius].cpu(), coef_node,
-                        s=20, color='white', edgecolor='k', label='Coefficients')
-
-            # Calculate Slope
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
-            slope_2nd = [x - y for x, y in zip(slope[1:], slope[:-1])]
-            bar_width = (act.grid[i, 1:] - act.grid[i, :-1]).mean().item() / 2  # Approx width
+            slope_2nd = [(x - y) * 10 for x, y in zip(slope[1:], slope[:-1])]
 
-            # Plot Slope
-            ax2.bar(act.grid[i, spline_radius:-(spline_radius + 1)].cpu(), slope,
-                    width=bar_width, align='center', color='r', alpha=0.3, label='Slope')
-            if depth < 2:
-                ax2.bar(act.grid[i, spline_radius:-(spline_radius + 2)].cpu() + bar_width/3, slope_2nd,
-                        width=bar_width, align='center', color='g', alpha=0.3, label='2nd Slope')
+            ax2.plot(knot_indices, coef_node, marker='o', ms=4, lw=1,
+                     color='dimgray', markerfacecolor='none', label='Coefficients')
 
-            ax.set_title(f'in {i} -> out {j}', fontsize=9)
+            slope_indices = knot_indices[:-1] + 0.5
+            ax2.bar(slope_indices, slope, width=0.3, align='center',
+                    hatch='xx', edgecolor='r', facecolor='none', linewidth=0.8, label='Slope')
 
-            # 4. Find Inflection
             if depth == 1:
-                idx_revert = find_index_sign_revert(slope_2nd)
+                ax2.bar(slope_indices[1:] - 0.3, slope_2nd, width=0.3, align='center',
+                        hatch='///', edgecolor='b', facecolor='none', linewidth=0.8, label='2nd Slope')
+
+            ax2.set_xticks(knot_indices)
+            ax2.set_xticklabels([f"{val:.2f}" for val in knot_points_actual],
+                                rotation=45, fontsize=7)
+
+            if depth == 1:
+                idx_revert = find_indices_sign_revert(slope_2nd)
+                idx_revert = [ir + 1 for ir in idx_revert]
             elif depth == 2:
-                idx_revert = find_index_sign_revert(slope)
-            if idx_revert is not None:
-                inflection_val = act.grid[i, spline_radius + idx_revert].item()
-                feature_inflections.append(inflection_val)
-                # Mark on plot
-                ax.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7)
+                idx_revert = find_indices_sign_revert(slope)
+            else:
+                idx_revert = []
 
-        inflection_points_per_input.append(feature_inflections)
+            if idx_revert:
+                first_vline = True
+                for ir in idx_revert:
+                    inflection_val = knot_points_actual[ir]
+                    feature_inflections_all.append(inflection_val)
+                    label_to_add = "Inflection" if first_vline else "_"
+                    ax2.axvline(x=ir, color='g', linestyle='--', alpha=0.7, lw=1.5, label=label_to_add)
+                    ax.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7, lw=1.5, label=label_to_add)
+                    first_vline = False
 
-    plt.suptitle(f"Layer {l} Activation Analysis: {data_name}", fontsize=12)
-    plot_path_act = os.path.join(savepath, f"{data_name}_activations_L{l}.png")
-    plt.savefig(plot_path_act)
-    # plt.show()
-    print(f"📊 Activation analysis saved to: {plot_path_act}")
+            ax.set_title(f'x{col_pos}: {feat_names[i]} -> out {j}', fontsize=9)
+            ax2.set_title(f'x{col_pos}: {feat_names[i]} -> out {j}', fontsize=9)
+            ax2.legend(loc='best', fontsize=7)
+
+        feature_inflections = sorted(set(feature_inflections_all))
+        inflection_points_per_input[i] = feature_inflections
+
+    fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.png"), dpi=300)
+    fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.svg"), format='svg')
+    fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.eps"), format='eps')
+    fig_spline.savefig(os.path.join(savepath, f"{data_name}_activations_L{l}.png"), dpi=300)
+    fig_spline.savefig(os.path.join(savepath, f"{data_name}_activations_L{l}.svg"), format='svg')
+    fig_spline.savefig(os.path.join(savepath, f"{data_name}_activations_L{l}.eps"), format='eps')
+    plt.close(fig_eval)
+    plt.close(fig_spline)
+    print(f"📊 Activation analysis saved to: {savepath}")
+
+    # ==========================================
+    # 3.5 Attribution Trajectory across Grid Intervals
+    # ==========================================
+    print("\n📈 Computing Attribution Trajectory across grid intervals...")
+
+    sort_order_global = np.argsort(scores_tot)[::-1]
+    rank_of_feat = {int(orig): rank for rank, orig in enumerate(sort_order_global)}
+    feat_colors = [plt.get_cmap('RdYlBu')(x) for x in np.linspace(0.1, 0.9, ni)]
+
+    n_cols_traj = min(ni, 3)
+    n_rows_traj = (ni + n_cols_traj - 1) // n_cols_traj
+
+    fig_traj, axs_traj = plt.subplots(n_rows_traj, n_cols_traj, squeeze=False,
+                                      figsize=(5 * n_cols_traj, 4 * n_rows_traj),
+                                      constrained_layout=True)
+    axs_traj_flat = axs_traj.flatten()
+
+    for col_pos, split_feat_idx in enumerate(sort_order_global):
+        split_feat_idx = int(split_feat_idx)
+        ax = axs_traj_flat[col_pos]
+        knots = act.grid[split_feat_idx, model.k - 1:-2].cpu().detach().numpy()
+
+        interval_scores = []
+        interval_centers = []
+
+        for lb, ub in zip(knots[:-1], knots[1:]):
+            mask = (dataset['train_input'][:, split_feat_idx] > lb) & \
+                   (dataset['train_input'][:, split_feat_idx] <= ub)
+            if torch.any(mask):
+                x_slice = dataset['train_input'][mask, :]
+                x_std = torch.std(x_slice, dim=0).detach().cpu().numpy()
+                model.forward(x_slice)
+                score = model.feature_score.detach().cpu().numpy().copy()
+                interval_scores.append(score / (x_std + 1e-6))
+                interval_centers.append(float((lb + ub) / 2))
+
+        if len(interval_scores) < 2:
+            ax.set_visible(False)
+            continue
+
+        scores_arr = np.array(interval_scores)  # (n_valid_intervals, ni)
+        x_pos = np.array(interval_centers)
+
+        # --- Primary axis: line plots per feature ---
+        for orig_idx in sort_order_global:
+            orig_idx = int(orig_idx)
+            rank = rank_of_feat[orig_idx]
+            ax.plot(x_pos, scores_arr[:, orig_idx], marker='o',
+                    color=feat_colors[rank],
+                    label=f"x{rank}: {feat_names[orig_idx]}")
+
+        for ip in (inflection_points_per_input[split_feat_idx] or []):
+            ax.axvline(x=ip, color='green', linestyle='--', alpha=0.7, linewidth=1.2)
+
+        ax.set_xlabel(f"{feat_names[split_feat_idx]} (normalized)")
+        ax.set_ylabel("Normalized Attribution Score")
+        ax.set_ylim(0, ax.get_ylim()[1] * 1.2)
+
+        # --- Secondary axis: relative importance as bar plot ---
+        if ni >= 2:
+            g1_idx = int(sort_order_global[0])
+            g2_idx = int(sort_order_global[1])
+            log_ratio = np.log10(
+                (scores_arr[:, g1_idx] + 1e-9) / (scores_arr[:, g2_idx] + 1e-9)
+            )
+            ax2 = ax.twinx()
+            ax2.bar(x_pos, log_ratio, width=(x_pos[1] - x_pos[0]) * 0.4 if len(x_pos) > 1 else 0.05,
+                    color='dimgray', alpha=0.25, zorder=1,
+                    label=r'$\mathcal{R}(x_0,x_1)$')
+            ax2.axhline(0, color='dimgray', linestyle='--', alpha=0.4)
+            ax2.set_ylabel(r'Relative Importance  $\mathcal{R}(x_0,x_1)$')
+            h1, l1 = ax.get_legend_handles_labels()
+            h2, l2 = ax2.get_legend_handles_labels()
+            ax.legend(h1 + h2, l1 + l2, loc='best')
+        else:
+            ax.legend(loc='best')
+
+    for k in range(ni, len(axs_traj_flat)):
+        axs_traj_flat[k].set_visible(False)
+
+    traj_base = os.path.join(savepath, f"{data_name}_attribution_trajectory")
+    fig_traj.savefig(traj_base + ".png", dpi=300)
+    fig_traj.savefig(traj_base + ".svg", format='svg')
+    fig_traj.savefig(traj_base + ".eps", format='eps')
+    plt.close(fig_traj)
+    print(f"📊 Attribution trajectory saved to: {traj_base}.png/svg/eps")
 
     # ==========================================
     # 4. Range-Based Attribution Scoring (Iterative Search)
@@ -250,6 +392,7 @@ def main():
     sorted_feat_indices = np.argsort(scores_tot)[::-1]
 
     selected_mask_idx = None
+    selected_split_points = None
     masks = []
     labels = []
 
@@ -286,6 +429,7 @@ def main():
         if non_empty_count >= 2:
             print(f"✅ Selected! (Found {non_empty_count} active intervals)")
             selected_mask_idx = mask_idx
+            selected_split_points = mask_interval
             masks = candidate_masks
             labels = [f'{lb:.2f} < x{mask_idx} <= {ub:.2f}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
             break
@@ -331,15 +475,16 @@ def main():
     # ==========================================
     split_data_savepath = os.path.join(savepath, f"{data_name}_range_split_data.pkl")
 
-    # Pack everything needed to reproduce these splits for the NN
     split_data = {
-        'dataset': dataset,  # The full dataset (tensors)
-        'masks': masks,  # The boolean masks for each interval
-        'labels': labels,  # The text labels (e.g., "0.1 < x < 0.3")
-        'selected_mask_idx': selected_mask_idx,  # The feature index used for splitting
-        'selected_mask_name': feat_names[selected_mask_idx],  # The feature name
-        'feature_names': feat_names,  # All feature names
-        'scaler_X': scaler_X,  # Scalers (needed for NN inputs)
+        'dataset': dataset,
+        'masks': masks,
+        'labels': labels,
+        'selected_mask_idx': selected_mask_idx,
+        'selected_mask_name': feat_names[selected_mask_idx],
+        'split_points': selected_split_points,  # interval boundaries in [0.1, 0.9] space
+        'inflection_points_per_input': inflection_points_per_input,  # per-feature inflection points
+        'feature_names': feat_names,
+        'scaler_X': scaler_X,
         'scaler_y': scaler_y
     }
 

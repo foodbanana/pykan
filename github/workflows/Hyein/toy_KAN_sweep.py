@@ -25,72 +25,52 @@ STANDARD_ZOO = {
         "func": lambda x: np.sin(2 * x[0]) + 5 * x[1],
         "bounds": [[-np.pi, np.pi], [-1, 1]],
         "names": ["Angle (x0)", "Linear (x1)"],
-        "mask_idx": None,
-        "mask_division": []
     },
     "mult_periodic": {
         "func": lambda x: x[1] * np.sin(2 * x[0]),
         "bounds": [[-np.pi, np.pi], [-1, 1]],
         "names": ["Angle (x0)", "Multiplier (x1)"],
-        "mask_idx": None,
-        "mask_division": []
     },
     "exponential": {
         "func": lambda x: np.exp(-2 * x[0]) + x[1],
         "bounds": [[-1, 1], [-1, 1]],
         "names": ["Exponent (x0)", "Linear (x1)"],
-        "mask_idx": 0,
-        "mask_division": [0.4]
     },
     "logarithm": {
         "func": lambda x: np.log(20 * (x[0] + 1.2)) + x[1],
         "bounds": [[-1, 1], [-1, 1]],
         "names": ["Log (x0)", "Linear (x1)"],
-        "mask_idx": 0,
-        "mask_division": [-0.8]
     },
     "log2": {
         "func": lambda x: (np.log(20 * (x[0] + 1.2)) + x[1])**2,
         "bounds": [[-1, 1], [-1, 1]],
         "names": ["Log (x0)", "Linear (x1)"],
-        "mask_idx": 0,
-        "mask_division": []
     },
     "convolution": {
         "func": lambda x: x[0] ** 2 / (x[1] + 1.08) / 1.8,
         "bounds": [[-1, 1], [-1, 1]],
         "names": ["Convex (x0)", "Denominator (x1)"],
-        "mask_idx": None,
-        "mask_division": []
     },
     "multiplication": {
         "func": lambda x: x[0] **4 * x[1],
         "bounds": [[-1, 1], [-1, 1]],
         "names": ["Square (x0)", "Linear (x1)"],
-        "mask_idx": None,
-        "mask_division": []
     },
     "conditional": {
         "func": lambda x: x[0]*2 + x[1] if x[0] < 0 else x[1],
         "bounds": [[-1, 1], [-1, 1]],
         "names": ["Conditional (x0)", "Linear (x1)"],
-        "mask_idx": None,
-        "mask_division": []
     },
     "rosenbrock": {
         "func": lambda x: (1 - 2*x[0]) ** 2 + 100 * (1 + 2*x[1] - 4 * x[0]**2) ** 2,
         "bounds": [[-1, 1], [-1, 1]],
         "names": ["Quadratic (x0)", "Parabolic (x1)"],
-        "mask_idx": None,
-        "mask_division": []
     },
     "ishigami": {
         "func": lambda x: np.sin(x[0] * np.pi) + 7 * np.sin(x[1] * np.pi) ** 2 + \
                           0.05 * (x[2] * np.pi)**4 * np.sin(x[0] * np.pi),
         "bounds": [[-1, 1], [-1, 1], [-1, 1]],
         "names": ["Primary (x0)", "Oscillator (x1)", "Zero-effect (x2)"],
-        "mask_idx": None,
-        "mask_division": []
     }
 }
 FUNCTION_ZOO = {**STANDARD_ZOO, **LOG_SUM_ZOO, **CONVEX_ZOO}
@@ -319,7 +299,7 @@ def main():
     # 5. Hyperparameter Tuning
     # ==========================================
     param_distributions = {
-        'n_layers': [2],
+        'n_layers': [1, 2],
         'grid': [10],
         'k': [3],
         'steps': [50],
@@ -339,7 +319,7 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=200,
+        n_iter=400,
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
@@ -385,8 +365,8 @@ def main():
 
     # Save Models
     best_kan_model.saveckpt(path=os.path.join(savepath, f'{data_name}_best_kan_model'))
-    joblib.dump(scaler_X, os.path.join(savepath, f'{data_name}_mlp_scaler_X.pkl'))
-    joblib.dump(scaler_y, os.path.join(savepath, f'{data_name}_mlp_scaler_y.pkl'))
+    joblib.dump(scaler_X, os.path.join(savepath, f'{data_name}_scaler_X.pkl'))
+    joblib.dump(scaler_y, os.path.join(savepath, f'{data_name}_scaler_y.pkl'))
 
     print(f"💾 Saved model and scalers to {savepath}")
 
