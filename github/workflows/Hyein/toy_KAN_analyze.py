@@ -3,6 +3,7 @@ import os
 import json
 import joblib
 import numpy as np
+import pandas as pd
 import torch
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -24,8 +25,8 @@ except AttributeError:
 
 # ==========================================
 # Import your wrapper and function ZOO
-from github.workflows.Hyein.toy_KAN_sweep import KANRegressor
-from github.workflows.Hyein.toy_analytic_SHAP_Sobol import FUNCTION_ZOO
+from SALib.sample import sobol as saltelli
+from github.workflows.Hyein.toy_KAN_sweep import KANRegressor, FUNCTION_ZOO
 from kan.experiments.analysis import find_index_sign_revert
 
 
@@ -141,7 +142,7 @@ def main():
     # Save & Show
     plot_path_io = os.path.join(savepath, f"{data_name}_input_vs_output.png")
     plt.savefig(plot_path_io, dpi=300)
-    plt.show()
+    # plt.show()
 
     # Run forward pass once to populate internals (splines, activations)
     model.forward(dataset['train_input'])
@@ -238,7 +239,7 @@ def main():
     plt.suptitle(f"Layer {l} Activation Analysis: {data_name}", fontsize=12)
     plot_path_act = os.path.join(savepath, f"{data_name}_activations_L{l}.png")
     plt.savefig(plot_path_act)
-    plt.show()
+    # plt.show()
     print(f"📊 Activation analysis saved to: {plot_path_act}")
 
     # ==========================================
@@ -381,8 +382,51 @@ def main():
 
     plot_path_score = os.path.join(savepath, f"{data_name}_scores_interval_x{mask_idx}.png")
     plt.savefig(plot_path_score)
-    plt.show()
+    # plt.show()
     print(f"📊 Range-based score plot saved to: {plot_path_score}")
+
+
+    # ==========================================
+    # 6. Attribution Scoring on Saltelli Dataset
+    # (mirrors toy_KAN_sweep.py lines 339-373)
+    # ==========================================
+    print("\n🧂 [6] Computing Attribution Scores on Saltelli Dataset...")
+
+    problem = {
+        'num_vars': nx,
+        'names': feat_names,
+        'bounds': bounds
+    }
+    X_saltelli_raw = saltelli.sample(problem, 512, calc_second_order=True, seed=42)
+    X_saltelli_norm = scaler_X.transform(X_saltelli_raw)
+    X_saltelli_tensor = torch.tensor(X_saltelli_norm, dtype=torch.float32, device=device)
+
+    model.forward(X_saltelli_tensor)
+    scores_saltelli = model.feature_score.detach().cpu().numpy()
+
+    if len(scores_saltelli.shape) > 1:
+        scores_saltelli = scores_saltelli.flatten()
+
+    fig_s, ax_s = plt.subplots()
+    positions = range(len(scores_saltelli))
+    bars = ax_s.bar(positions, scores_saltelli, color='skyblue', edgecolor='black')
+    ax_s.bar_label(bars, fmt='%.2f', padding=3)
+    ax_s.set_xticks(list(positions))
+    ax_s.set_xticklabels(feat_names, rotation=15, ha='center')
+    ax_s.set_ylabel("Global Attribution Score")
+    ax_s.set_title(f"Feature Importance (Saltelli): {data_name}")
+    plt.tight_layout()
+    plt.savefig(os.path.join(savepath, f"{data_name}_scores_global_saltelli.png"), dpi=300)
+    # plt.show()
+
+    df_scores_saltelli = pd.DataFrame({
+        'Feature': feat_names,
+        'Global_Attribution_Score': scores_saltelli
+    }).sort_values(by='Global_Attribution_Score', ascending=False)
+    df_scores_saltelli.to_csv(
+        os.path.join(savepath, f"{data_name}_global_attribution_scores_saltelli.csv"), index=False
+    )
+    print(f"📊 Saltelli attribution scores saved to: {savepath}")
 
 
 if __name__ == "__main__":

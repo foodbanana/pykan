@@ -44,7 +44,7 @@ def main():
         'log2',
         # 'ishigami', 'rosenbrock',
         # 'convolution', 'original', 'mult_periodic',
-        # 'exponential', 'logarithm',
+        'exponential', 'logarithm',
         # 'multiplication', 'conditional'
         # 'log_sum_2d', 'log_sum_5d', 'log_sum_10d', 'log_sum_30d',
     ] # + [f'convex_seed_{i}' for i in range(30)]

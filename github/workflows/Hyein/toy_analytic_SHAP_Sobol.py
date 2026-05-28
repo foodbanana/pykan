@@ -1,14 +1,14 @@
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 import argparse
+import joblib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import shap
 from SALib.sample import sobol as saltelli
 from SALib.analyze import sobol
-from github.workflows.Hyein.toy_7_log_sum_factory import LOG_SUM_ZOO
-from github.workflows.Hyein.toy_8_convex_factory import CONVEX_ZOO
+from github.workflows.Hyein.toy_KAN_sweep import FUNCTION_ZOO
 
 
 # ==========================================
@@ -60,11 +60,11 @@ def run_analysis_suite(model_func, bounds, feature_names, save_dir, suffix, titl
         'bounds': bounds
     }
 
-    # Generate samples (Physical Domain)
-    # Note: Sobol requires 2^n samples. 1024 is standard base.
+    # Generate samples (shared with SHAP below)
+    X_sobol = saltelli.sample(problem, 512, calc_second_order=True, seed=42)
+    Y_sobol = model_func(X_sobol)
+
     try:
-        X_sobol = saltelli.sample(problem, 1024, calc_second_order=True)
-        Y_sobol = model_func(X_sobol)
         Si = sobol.analyze(problem, Y_sobol, calc_second_order=True)
 
         # Save CSV
@@ -91,21 +91,9 @@ def run_analysis_suite(model_func, bounds, feature_names, save_dir, suffix, titl
     # ------------------------------------------------
     # 2. SHAP Analysis
     # ------------------------------------------------
-    # 1. Background (Random uniform within CURRENT bounds)
-    X_representative = np.random.uniform(
-        low=[b[0] for b in bounds],
-        high=[b[1] for b in bounds],
-        size=(1024, n_features)
-    )
-    # Summarize to 100 weighted points
-    X_bg = shap.kmeans(X_representative, 100)
-
-    # 2. Test Data (Random uniform within CURRENT bounds)
-    X_test = np.random.uniform(
-        low=[b[0] for b in bounds],
-        high=[b[1] for b in bounds],
-        size=(256, n_features)
-    )
+    # Use the same Sobol samples for consistency
+    X_bg = shap.kmeans(X_sobol, 100)
+    X_test = X_sobol
 
     explainer = shap.KernelExplainer(model_func, X_bg)
     # Silence shap warnings
@@ -132,85 +120,6 @@ def run_analysis_suite(model_func, bounds, feature_names, save_dir, suffix, titl
     print(f"      ✅ Completed {suffix}")
 
 
-# ==========================================
-# 1. Function Zoo & Main
-# ==========================================
-STANDARD_ZOO = {
-    "original": {
-        "func": lambda x: np.sin(2 * x[0]) + 5 * x[1],
-        "bounds": [[-np.pi, np.pi], [-1, 1]],
-        "names": ["Angle (x0)", "Linear (x1)"],
-        "mask_idx": None,
-        "mask_division": []
-    },
-    "mult_periodic": {
-        "func": lambda x: x[1] * np.sin(2 * x[0]),
-        "bounds": [[-np.pi, np.pi], [-1, 1]],
-        "names": ["Angle (x0)", "Multiplier (x1)"],
-        "mask_idx": None,
-        "mask_division": []
-    },
-    "exponential": {
-        "func": lambda x: np.exp(-2 * x[0]) + x[1],
-        "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Exponent (x0)", "Linear (x1)"],
-        "mask_idx": 0,
-        "mask_division": [0.4]
-    },
-    "logarithm": {
-        "func": lambda x: np.log(20 * (x[0] + 1.2)) + x[1],
-        "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Log (x0)", "Linear (x1)"],
-        "mask_idx": 0,
-        "mask_division": [-0.8]
-    },
-    "log2": {
-        "func": lambda x: (np.log(20 * (x[0] + 1.2)) + x[1])**2,
-        "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Log (x0)", "Linear (x1)"],
-        "mask_idx": 0,
-        "mask_division": [-0.8]
-    },
-    "convolution": {
-        "func": lambda x: x[0] ** 2 / (x[1] + 1.08) / 1.8,
-        "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Convex (x0)", "Denominator (x1)"],
-        "mask_idx": None,
-        "mask_division": []
-    },
-    "multiplication": {
-        "func": lambda x: x[0] **4 * x[1],
-        "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Square (x0)", "Linear (x1)"],
-        "mask_idx": None,
-        "mask_division": []
-    },
-    "conditional": {
-        "func": lambda x: x[0]*2 + x[1] if x[0] < 0 else x[1],
-        "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Conditional (x0)", "Linear (x1)"],
-        "mask_idx": None,
-        "mask_division": []
-    },
-    "rosenbrock": {
-        "func": lambda x: (1 - 2*x[0]) ** 2 + 100 * (1 + 2*x[1] - 4 * x[0]**2) ** 2,
-        "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Quadratic (x0)", "Parabolic (x1)"],
-        "mask_idx": None,
-        "mask_division": []
-    },
-    "ishigami": {
-        "func": lambda x: np.sin(x[0] * np.pi) + 7 * np.sin(x[1] * np.pi) ** 2 + \
-                          0.05 * (x[2] * np.pi)**4 * np.sin(x[0] * np.pi),  # Sobol' and Levitan (1999)
-        "bounds": [[-1, 1], [-1, 1], [-1, 1]],
-        "names": ["Primary (x0)", "Oscillator (x1)", "Zero-effect (x2)"],
-        "mask_idx": None,
-        "mask_division": []
-    }
-}
-FUNCTION_ZOO = {**STANDARD_ZOO, **LOG_SUM_ZOO, **CONVEX_ZOO}
-
-
 def main():
     parser = argparse.ArgumentParser(description="Analyze analytical functions.")
     parser.add_argument("func_name", type=str, nargs='?', default="exponential",
@@ -222,16 +131,27 @@ def main():
 
     print(f"🚀 Running Analysis for case: '{case_name}'")
 
-    # Load config
     config = FUNCTION_ZOO[case_name]
-    model_func = lambda X: np.apply_along_axis(config["func"], 1, X)
-
-    base_bounds = config["bounds"]
     feature_names = config["names"]
+    n_features = len(config["bounds"])
 
     # Setup Output Path
     root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein', "analytical_results", case_name)
     os.makedirs(root_dir, exist_ok=True)
+
+    # Load scalers saved by toy_KAN_sweep.py
+    kan_dir = os.path.join(root_dir, "kan_models")
+    scaler_X = joblib.load(os.path.join(kan_dir, f'{case_name}_mlp_scaler_X.pkl'))
+    scaler_y = joblib.load(os.path.join(kan_dir, f'{case_name}_mlp_scaler_y.pkl'))
+
+    # model_func operates in scaled space: takes X in [0.1, 0.9], returns scaled y
+    raw_func = lambda X: np.apply_along_axis(config["func"], 1, X)
+    model_func = lambda X_scaled: scaler_y.transform(
+        raw_func(scaler_X.inverse_transform(X_scaled)).reshape(-1, 1)
+    ).flatten()
+
+    # All features share the same scaled bounds
+    base_bounds = [[0.1, 0.9]] * n_features
 
     # ==========================================
     # 2. Run Global Analysis
@@ -255,30 +175,27 @@ def main():
     if mask_idx is not None and mask_divs:
         print(f"\n✂️ [2/2] Running RANGE Analysis (Split by Feature {mask_idx}: {feature_names[mask_idx]})...")
 
-        # Get the global bounds for the split feature
-        feat_min, feat_max = base_bounds[mask_idx]
+        # Scale raw division points into [0.1, 0.9] space using scaler_X
+        def scale_point(val):
+            dummy = np.zeros((1, n_features))
+            dummy[0, mask_idx] = val
+            return scaler_X.transform(dummy)[0, mask_idx]
 
-        # Create full list of split points: [min, div1, div2, ..., max]
-        # Sort and filter divisions to ensure they are within bounds
-        valid_divs = sorted([d for d in mask_divs if feat_min < d < feat_max])
+        feat_min, feat_max = 0.1, 0.9
+        valid_divs = sorted([scale_point(d) for d in mask_divs
+                             if feat_min < scale_point(d) < feat_max])
         split_points = [feat_min] + valid_divs + [feat_max]
 
-        print(f"   Splitting points: {split_points}")
+        print(f"   Splitting points (scaled): {[f'{p:.3f}' for p in split_points]}")
 
         for i in range(len(split_points) - 1):
             lb, ub = split_points[i], split_points[i + 1]
             range_label = f"range_{i}_{lb:.2f}_to_{ub:.2f}"
 
-            # Create New Bounds for this range
-            # Copy base bounds, then update the specific feature's bounds
-            current_bounds = [list(b) for b in base_bounds]  # Deep copy
+            current_bounds = [list(b) for b in base_bounds]
             current_bounds[mask_idx] = [lb, ub]
 
             print(f"   🔹 Processing Range {i}: {feature_names[mask_idx]} in [{lb:.2f}, {ub:.2f}]")
-
-            # Create sub-directory for neatness (optional, currently saving in root)
-            # save_subdir = os.path.join(root_dir, range_label)
-            # os.makedirs(save_subdir, exist_ok=True)
 
             run_analysis_suite(
                 model_func=model_func,
