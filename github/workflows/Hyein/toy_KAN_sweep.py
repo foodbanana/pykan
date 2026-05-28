@@ -46,6 +46,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                  lamb_entropy=0.1,
                  lr=0.1,
                  steps=20,
+                 stop_grid_update_step=50,
                  pruning_enabled=True,
                  # Symbolic Regression Parameters
                  symbolic_enabled=True,
@@ -66,6 +67,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         self.lamb_entropy = lamb_entropy
         self.lr = lr
         self.steps = steps
+        self.stop_grid_update_step = stop_grid_update_step
 
         self.pruning_enabled = pruning_enabled
         self.pruning_node_th = 0.01
@@ -96,11 +98,13 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                              seed=42, device=self.device)
 
         # Create dataset dictionary
+        _X_train, _X_test, _y_train, _y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
         dataset = {
-            'train_input': torch.tensor(X, dtype=torch.float32, device=self.device),
-            'train_label': torch.tensor(y, dtype=torch.float32, device=self.device).reshape(-1, 1),
-            'test_input': torch.tensor(X, dtype=torch.float32, device=self.device),
-            'test_label': torch.tensor(y, dtype=torch.float32, device=self.device).reshape(-1, 1)
+            'train_input': torch.tensor(_X_train, dtype=torch.float32, device=self.device),
+            'train_label': torch.tensor(_y_train, dtype=torch.float32, device=self.device).reshape(-1, 1),
+            'test_input': torch.tensor(_X_test, dtype=torch.float32, device=self.device),
+            'test_label': torch.tensor(_y_test, dtype=torch.float32, device=self.device).reshape(-1, 1)
         }
         self.dataset = dataset
 
@@ -110,14 +114,14 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                              grid_range=(0.1, 0.9), seed=42, device=self.device)
 
         # 2. Phase 1: Train Coarse Model
-        self.model.fit(dataset, opt='LBFGS', steps=self.steps,
+        self.model.fit(dataset, opt='LBFGS', steps=self.steps, stop_grid_update_step=self.stop_grid_update_step,
                        lamb=self.lamb, lamb_coef=self.lamb_coef, lamb_entropy=self.lamb_entropy,
                        lr=self.lr)
 
         # 3. Phase 2: Grid Extension (if needed)
         if self.grid > start_grid:
             self.model = self.model.refine(self.grid)
-            self.model.fit(dataset, opt='LBFGS', steps=self.steps,
+            self.model.fit(dataset, opt='LBFGS', steps=self.steps, stop_grid_update_step=self.stop_grid_update_step,
                            lamb=self.lamb, lamb_coef=self.lamb_coef, lamb_entropy=self.lamb_entropy,
                            lr=self.lr, lamb_coefdiff=self.lamb_coefdiff)
 
@@ -137,7 +141,8 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                                          a_range=(-self.sym_range, self.sym_range),
                                          b_range=(-self.sym_range, self.sym_range))
 
-                self.model.fit(dataset, opt='LBFGS', steps=self.steps, lr=self.lr)
+                self.model.fit(dataset, opt='LBFGS', steps=self.steps,
+                               stop_grid_update_step=self.stop_grid_update_step, lr=self.lr)
             except Exception as e:
                 print(f"   ⚠️ Symbolic failed (ignoring): {e}")
 
@@ -182,7 +187,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 # ==========================================
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="original",
+    parser.add_argument("func_name", type=str, nargs='?', default="log2",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
 
@@ -213,7 +218,7 @@ def main():
     X_raw = np.random.uniform(
         low=[b[0] for b in bounds],
         high=[b[1] for b in bounds],
-        size=(1280, nx)
+        size=(2000, nx)
     )
 
     y_raw = np.apply_along_axis(target_func, 1, X_raw).reshape(-1, 1)
@@ -240,15 +245,16 @@ def main():
     # ==========================================
     param_distributions = {
         'n_layers': [2],
-        'grid': [3],
+        'grid': [10],
         'k': [3],
-        'steps': [20],
-        'lamb': [0.01],
-        'lamb_coef': [0.1],  # Penalize large coefficients (sparsity)
-        'lamb_coefdiff': [0.5,],  # Penalize large coefficients (sparsity)
-        'lamb_entropy': [0.1],  # Penalize complexity (for symbolic)
-        'lr': [0.01, 0.1, 0.5, 1.],  # Learning rate for LBFGS
-        'sym_range': [10]
+        'steps': [50],
+        'stop_grid_update_step': [20],
+        'lamb': [0., 0.01],
+        'lamb_coef': [0., 0.01],  # Penalize large coefficients (sparsity)
+        'lamb_coefdiff': [0., 0.01],  # Penalize large coefficients (sparsity)
+        'lamb_entropy': [1, 1.5, 2, 2.5, 3, 4, 5],  # Penalize complexity (for symbolic)
+        'lr': [1.],  # Learning rate for LBFGS
+        'sym_range': [10, 20, 50]
     }
 
     # Pass default symbolic options here if you want to override defaults
@@ -258,7 +264,7 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=100,  # Increased slightly to cover new params
+        n_iter=200,
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
