@@ -490,6 +490,11 @@ def main():
 
     joblib.dump(split_data, split_data_savepath)
 
+    # Save KAN interval scores as CSV for cross-method comparison
+    kan_scores_df = pd.DataFrame(scores_interval_norm, columns=feat_names)
+    kan_scores_df.insert(0, 'Interval_Label', labels)
+    kan_scores_df.to_csv(os.path.join(savepath, f"{data_name}_kan_interval_scores.csv"), index=False)
+
     # ==========================================
     # 5. Plot Range-Based Scores
     # ==========================================

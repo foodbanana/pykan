@@ -10,6 +10,45 @@ from SALib.sample import sobol as saltelli
 from SALib.analyze import sobol
 from github.workflows.Hyein.toy_KAN_sweep import FUNCTION_ZOO
 
+SA_RC = {
+    'figure.dpi': 150,
+    'figure.facecolor': 'white',
+    'figure.autolayout': True,
+    'axes.facecolor': 'white',
+    'axes.edgecolor': '#444444',
+    'axes.linewidth': 0.8,
+    'axes.spines.top': True,
+    'axes.spines.right': True,
+    'axes.labelsize': 12,
+    'axes.labelcolor': 'black',
+    'axes.labelweight': '500',
+    'axes.titlelocation': 'center',
+    'axes.grid': False,
+    'xtick.labelsize': 12,
+    'xtick.color': 'black',
+    'xtick.direction': 'out',
+    'ytick.labelsize': 10,
+    'ytick.color': 'black',
+    'ytick.direction': 'out',
+    'font.family': 'sans-serif',
+    'font.sans-serif': ['Helvetica Neue LT Pro', 'Helvetica Neue', 'Arial', 'DejaVu Sans'],
+    'font.size': 10,
+    'font.weight': '300',
+    'text.color': 'black',
+    'patch.edgecolor': 'black',
+    'patch.linewidth': 0.7,
+    'patch.force_edgecolor': True,
+    'legend.fontsize': 8,
+    'legend.title_fontsize': 9,
+    'legend.framealpha': 0.0,
+    'legend.edgecolor': '#444444',
+    'lines.linewidth': 0.7,
+    'lines.markersize': 3,
+    'savefig.dpi': 150,
+    'savefig.bbox': 'tight',
+    'savefig.facecolor': 'white',
+}
+
 
 # ==========================================
 # 0. Helper Functions
@@ -122,12 +161,13 @@ def run_analysis_suite(model_func, bounds, feature_names, save_dir, suffix, titl
 
 def main():
     parser = argparse.ArgumentParser(description="Analyze analytical functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="exponential",
+    parser.add_argument("func_name", type=str, nargs='?', default="log2",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function: " + ", ".join(FUNCTION_ZOO.keys()))
 
     args = parser.parse_args()
     case_name = args.func_name
+    plt.rcParams.update(SA_RC)
 
     print(f"🚀 Running Analysis for case: '{case_name}'")
 
@@ -199,8 +239,77 @@ def main():
                 )
         else:
             print("\nℹ️  No valid split found in range_split_data.pkl. Skipping range analysis.")
+            split_points = None
     else:
         print(f"\nℹ️  range_split_data.pkl not found. Run toy_KAN_analyze.py first. Skipping range analysis.")
+        mask_idx = None
+        split_points = None
+
+    # ==========================================
+    # 4. Combined Interval Comparison (Sobol vs SHAP vs KAN)
+    # ==========================================
+    kan_csv_path = os.path.join(kan_dir, f'{case_name}_kan_interval_scores.csv')
+
+    if split_points and mask_idx is not None and os.path.exists(kan_csv_path):
+        print(f"\n📊 Building combined Sobol / SHAP / KAN interval comparison...")
+
+        df_kan = pd.read_csv(kan_csv_path)
+        n_intervals = len(split_points) - 1
+        num_feat = len(feature_names)
+        colors = [plt.get_cmap('RdYlBu')(x) for x in np.linspace(0.1, 0.9, num_feat)]
+
+        n_cols = min(n_intervals, 3)
+        n_rows = (n_intervals + n_cols - 1) // n_cols
+        fig, axes = plt.subplots(n_rows, n_cols, squeeze=False,
+                                 figsize=(4.5 * n_cols, 3.5 * n_rows),
+                                 constrained_layout=True)
+        axes_flat = axes.flatten()
+
+        for i in range(n_intervals):
+            lb, ub = split_points[i], split_points[i + 1]
+            suffix = f"_range_{i}_{lb:.2f}_to_{ub:.2f}"
+            ax = axes_flat[i]
+
+            sobol_path = os.path.join(root_dir, f"sobol_indices{suffix}.csv")
+            shap_path  = os.path.join(root_dir, f"shap_mean_abs{suffix}.csv")
+
+            methods = {}
+            if os.path.exists(sobol_path):
+                df_s = pd.read_csv(sobol_path).set_index('Feature')
+                methods['Sobol'] = df_s['First_Order (S1)'].reindex(feature_names).fillna(0)
+            if os.path.exists(shap_path):
+                df_h = pd.read_csv(shap_path).set_index('Feature')
+                methods['SHAP'] = df_h['Mean_Abs_SHAP'].reindex(feature_names).fillna(0)
+            if i < len(df_kan):
+                methods['KAN'] = pd.Series(
+                    df_kan.iloc[i][feature_names].values.astype(float),
+                    index=feature_names
+                )
+
+            if not methods:
+                ax.set_visible(False)
+                continue
+
+            df_methods = pd.DataFrame(methods)
+            col_sums = df_methods.sum()
+            df_methods = df_methods / col_sums.where(col_sums != 0, 1)  # normalize each method
+
+            df_methods.T.plot(kind='bar', rot=0, color=colors, alpha=0.9, ax=ax)
+            ax.set_xlabel('Method')
+            ax.set_ylabel('Attribution Score')
+            ax.set_title(f"{lb:.2f} < {feature_names[mask_idx]} < {ub:.2f}")
+            ax.set_ylim(0, ax.get_ylim()[1] * 1.2)
+            ax.legend(title='Feature')
+
+        for k in range(n_intervals, len(axes_flat)):
+            axes_flat[k].set_visible(False)
+
+        out_base = os.path.join(root_dir, f"{case_name}_interval_comparison")
+        fig.savefig(out_base + ".png")
+        fig.savefig(out_base + ".svg", format='svg')
+        fig.savefig(out_base + ".eps", format='eps')
+        plt.close(fig)
+        print(f"   Saved to: {out_base}.png/svg/eps")
 
     print(f"\n✅ All analysis complete. Results saved in: {root_dir}")
 
