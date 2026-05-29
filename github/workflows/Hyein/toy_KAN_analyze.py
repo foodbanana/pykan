@@ -170,15 +170,12 @@ def main():
         feature_label = feat_names[i] if feat_names and i < len(feat_names) else f"Feature {i}"
         ax.set_xlabel(feature_label)
         ax.set_ylabel("Output y")
-        ax.set_title(f"{feature_label} vs Output")
         ax.legend(loc='upper left')
         ax.grid(True, alpha=0.3)
 
     # Hide unused subplots
     for i in range(n_features, len(axs_io)):
         axs_io[i].axis('off')
-
-    plt.suptitle(f"Input vs Output Analysis: {data_name}", fontsize=14)
 
     # Save & Show
     plot_path_io = os.path.join(savepath, f"{data_name}_input_vs_output.png")
@@ -222,12 +219,13 @@ def main():
     # Pre-allocate indexed by original feature; downstream code uses inflection_points_per_input[mask_idx]
     inflection_points_per_input = [None] * ni
     sort_order_act = np.argsort(scores_tot)[::-1]
+    feat_colors = [plt.get_cmap('RdYlBu')(x) for x in np.linspace(0.1, 0.9, ni)]
 
     fig_eval, axs_eval = plt.subplots(nrows=no, ncols=ni, squeeze=False,
-                                      figsize=(max(3 * ni, 6), max(2.5 * no, 3.5)),
+                                      figsize=(max(4 * ni, 6), max(3 * no, 3.5)),
                                       constrained_layout=True)
     fig_spline, axs_spline = plt.subplots(nrows=no, ncols=ni, squeeze=False,
-                                          figsize=(max(3 * ni, 6), max(2.5 * no, 3.5)),
+                                          figsize=(max(4 * ni, 6), max(3 * no, 3.5)),
                                           constrained_layout=True)
 
     for col_pos, i in enumerate(sort_order_act):
@@ -242,25 +240,25 @@ def main():
             knot_indices = np.arange(len(coef_node))
 
             rank = np.argsort(inputs)
-            ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1, label='Activation function')
+            ax.plot(inputs[rank], outputs[rank], marker='o',
+                    color=feat_colors[col_pos], label='Activation')
 
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
             slope_2nd = [(x - y) * 10 for x, y in zip(slope[1:], slope[:-1])]
 
-            ax2.plot(knot_indices, coef_node, marker='o', ms=4, lw=1,
-                     color='dimgray', markerfacecolor='none', label='Coefficients')
+            ax2.plot(knot_indices, coef_node, marker='o',
+                     color=feat_colors[col_pos], label='Coefficients')
 
             slope_indices = knot_indices[:-1] + 0.5
             ax2.bar(slope_indices, slope, width=0.3, align='center',
-                    hatch='xx', edgecolor='r', facecolor='none', linewidth=0.8, label='Slope')
+                    hatch='///', edgecolor='dimgray', facecolor='none', label='Slope')
 
             if depth == 1:
                 ax2.bar(slope_indices[1:] - 0.3, slope_2nd, width=0.3, align='center',
-                        hatch='///', edgecolor='b', facecolor='none', linewidth=0.8, label='2nd Slope')
+                        hatch='xx', edgecolor='steelblue', facecolor='none', label='2nd Slope')
 
             ax2.set_xticks(knot_indices)
-            ax2.set_xticklabels([f"{val:.2f}" for val in knot_points_actual],
-                                rotation=45, fontsize=7)
+            ax2.set_xticklabels([f"{val:.2f}" for val in knot_points_actual], rotation=45, fontsize=9)
 
             if depth == 1:
                 idx_revert = find_indices_sign_revert(slope_2nd)
@@ -276,13 +274,16 @@ def main():
                     inflection_val = knot_points_actual[ir]
                     feature_inflections_all.append(inflection_val)
                     label_to_add = "Inflection" if first_vline else "_"
-                    ax2.axvline(x=ir, color='g', linestyle='--', alpha=0.7, lw=1.5, label=label_to_add)
-                    ax.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7, lw=1.5, label=label_to_add)
+                    ax2.axvline(x=ir, color='green', linestyle='--', alpha=0.7, label=label_to_add)
+                    ax.axvline(x=inflection_val, color='green', linestyle='--', alpha=0.7, label=label_to_add)
                     first_vline = False
 
-            ax.set_title(f'x{col_pos}: {feat_names[i]} -> out {j}', fontsize=9)
-            ax2.set_title(f'x{col_pos}: {feat_names[i]} -> out {j}', fontsize=9)
-            ax2.legend(loc='best', fontsize=7)
+            ax.set_xlabel(f"{feat_names[i]}")
+            ax.set_ylabel(f"node ({l+1}, {j})")
+            ax2.set_xlabel(f"{feat_names[i]}")
+            ax2.set_ylabel(f"node ({l+1}, {j})")
+            ax2.axhline(0, color='dimgray', linestyle='--', alpha=0.4)
+            ax2.legend(loc='best')
 
         feature_inflections = sorted(set(feature_inflections_all))
         inflection_points_per_input[i] = feature_inflections
@@ -302,15 +303,14 @@ def main():
     # ==========================================
     print("\n📈 Computing Attribution Trajectory across grid intervals...")
 
-    sort_order_global = np.argsort(scores_tot)[::-1]
+    sort_order_global = sort_order_act  # same ordering; feat_colors already defined in section 3
     rank_of_feat = {int(orig): rank for rank, orig in enumerate(sort_order_global)}
-    feat_colors = [plt.get_cmap('RdYlBu')(x) for x in np.linspace(0.1, 0.9, ni)]
 
     n_cols_traj = min(ni, 3)
     n_rows_traj = (ni + n_cols_traj - 1) // n_cols_traj
 
     fig_traj, axs_traj = plt.subplots(n_rows_traj, n_cols_traj, squeeze=False,
-                                      figsize=(5 * n_cols_traj, 4 * n_rows_traj),
+                                      figsize=(4 * n_cols_traj, 3 * n_rows_traj),
                                       constrained_layout=True)
     axs_traj_flat = axs_traj.flatten()
 
@@ -351,7 +351,7 @@ def main():
         for ip in (inflection_points_per_input[split_feat_idx] or []):
             ax.axvline(x=ip, color='green', linestyle='--', alpha=0.7, linewidth=1.2)
 
-        ax.set_xlabel(f"{feat_names[split_feat_idx]} (normalized)")
+        ax.set_xlabel(f"{feat_names[split_feat_idx]}")
         ax.set_ylabel("Normalized Attribution Score")
         ax.set_ylim(0, ax.get_ylim()[1] * 1.2)
 
