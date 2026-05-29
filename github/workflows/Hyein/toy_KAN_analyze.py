@@ -222,10 +222,10 @@ def main():
     feat_colors = [plt.get_cmap('RdYlBu')(x) for x in np.linspace(0.1, 0.9, ni)]
 
     fig_eval, axs_eval = plt.subplots(nrows=no, ncols=ni, squeeze=False,
-                                      figsize=(max(4 * ni, 6), max(3 * no, 3.5)),
+                                      figsize=(4 * ni, 3 * no),
                                       constrained_layout=True)
     fig_spline, axs_spline = plt.subplots(nrows=no, ncols=ni, squeeze=False,
-                                          figsize=(max(4 * ni, 6), max(3 * no, 3.5)),
+                                          figsize=(4 * ni, 3 * no),
                                           constrained_layout=True)
 
     for col_pos, i in enumerate(sort_order_act):
@@ -383,6 +383,68 @@ def main():
     fig_traj.savefig(traj_base + ".eps", format='eps')
     plt.close(fig_traj)
     print(f"📊 Attribution trajectory saved to: {traj_base}.png/svg/eps")
+
+    # ==========================================
+    # 3.7 Contour Analysis (Analytic Function + KAN Inflection Points)
+    # ==========================================
+    if nx >= 2:
+        print("\n🗺️ Generating Contour Analysis...")
+
+        top_2_idx = np.argsort(scores_tot)[-2:][::-1]
+        f1_idx, f2_idx = int(top_2_idx[0]), int(top_2_idx[1])
+        f1_name, f2_name = feat_names[f1_idx], feat_names[f2_idx]
+
+        grid_res = 50
+        x1_min, x1_max = bounds[f1_idx]
+        x2_min, x2_max = bounds[f2_idx]
+
+        x1_lin = np.linspace(x1_min, x1_max, grid_res)
+        x2_lin = np.linspace(x2_min, x2_max, grid_res)
+        X1_mesh, X2_mesh = np.meshgrid(x1_lin, x2_lin)
+        grid_coords = np.stack([X1_mesh.ravel(), X2_mesh.ravel()], axis=-1)
+
+        # Fix all other features at the midpoint of their bounds
+        mean_raw = np.array([(b[0] + b[1]) / 2 for b in bounds])
+        grid_input = np.tile(mean_raw, (grid_res ** 2, 1))
+        grid_input[:, f1_idx] = grid_coords[:, 0]
+        grid_input[:, f2_idx] = grid_coords[:, 1]
+
+        Z = np.apply_along_axis(target_func, 1, grid_input).reshape(grid_res, grid_res)
+
+        # Denormalize KAN inflection points from [0.1, 0.9] → raw space
+        def get_denorm_ips(feat_idx):
+            raw_ips = inflection_points_per_input[feat_idx] or []
+            valid_ips = [ip for ip in raw_ips if 0.05 < ip < 0.95]
+            if not valid_ips:
+                return []
+            dummy = np.zeros((len(valid_ips), nx))
+            dummy[:, feat_idx] = valid_ips
+            return scaler_X.inverse_transform(dummy)[:, feat_idx]
+
+        f1_ips = get_denorm_ips(f1_idx)
+        f2_ips = get_denorm_ips(f2_idx)
+
+        fig_c, ax_c = plt.subplots(figsize=(4, 3))
+        cp = ax_c.contourf(X1_mesh, X2_mesh, Z, levels=30, cmap='RdYlBu_r', alpha=0.8)
+        cbar = fig_c.colorbar(cp, ax=ax_c)
+        cbar.set_label("y")
+
+        for ip in f1_ips:
+            ax_c.axvline(x=ip, color='green', linestyle='--', alpha=0.5)
+        for ip in f2_ips:
+            ax_c.axhline(y=ip, color='green', linestyle='--', alpha=0.5)
+
+        ax_c.set_xlabel(f1_name)
+        ax_c.set_ylabel(f2_name)
+        ax_c.set_xlim([x1_min, x1_max])
+        ax_c.set_ylim([x2_min, x2_max])
+
+        contour_base = os.path.join(savepath, f"{data_name}_contour_mean_fixed")
+        fig_c.savefig(contour_base + ".png")
+        fig_c.savefig(contour_base + ".svg", format='svg')
+        fig_c.savefig(contour_base + ".eps", format='eps')
+        plt.close(fig_c)
+        print(f"📊 Contour saved to: {contour_base}.png/svg/eps")
 
     # ==========================================
     # 4. Range-Based Attribution Scoring (Iterative Search)

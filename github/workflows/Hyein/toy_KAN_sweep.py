@@ -242,7 +242,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 # ==========================================
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="log2",
+    parser.add_argument("func_name", type=str, nargs='?', default="exponential",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
 
@@ -302,13 +302,13 @@ def main():
         'n_layers': [1],
         'grid': [10],
         'k': [3],
-        'steps': [50],
+        'steps': [20],
         'stop_grid_update_step': [20],
-        'lamb': [0., 0.01, 0.1],
-        'lamb_coef': [0., 1.],  # Penalize large coefficients (sparsity)
-        'lamb_coefdiff': [0., 0.1],  # Penalize large coefficients (sparsity)
-        'lamb_entropy': [0.1, 2],  # Penalize complexity (for symbolic)
-        'lr': [0.01, 0.1, 1.],  # Learning rate for LBFGS
+        'lamb': [0.01],
+        'lamb_coef': [1.],  # Penalize large coefficients (sparsity)
+        # 'lamb_coefdiff': [0., 0.1],  # Penalize large coefficients (sparsity)
+        'lamb_entropy': [0.1],  # Penalize complexity (for symbolic)
+        'lr': [0.1],  # Learning rate for LBFGS
         'sym_range': [10, 50]
     }
 
