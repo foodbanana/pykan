@@ -15,10 +15,17 @@ sb_trainable: true
 sp_trainable: true
 state_id: 1
 symbolic.funs_name.0:
-- - log
-  - x
+- - sqrt
+  - x^2
+- - sin
+  - x^2
+symbolic.funs_name.1:
+- - sin
+  - sin
 symbolic_enabled: true
 width:
+- - 2
+  - 0
 - - 2
   - 0
 - - 1

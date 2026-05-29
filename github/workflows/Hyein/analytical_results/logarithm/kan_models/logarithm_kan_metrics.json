@@ -1,16 +1,18 @@
 {
     "dataset": "logarithm",
-    "test_r2": 0.9999994030747604,
+    "test_r2": 0.9999999999537516,
     "best_params": {
         "sym_range": 50,
-        "steps": 20,
+        "stop_grid_update_step": 20,
+        "steps": 50,
         "n_layers": 1,
-        "lr": 0.01,
-        "lamb_entropy": 0.1,
-        "lamb_coef": 0,
-        "lamb": 0.001,
+        "lr": 1.0,
+        "lamb_entropy": 4,
+        "lamb_coefdiff": 0.0,
+        "lamb_coef": 0.01,
+        "lamb": 0.0,
         "k": 3,
-        "grid": 3
+        "grid": 10
     },
-    "symbolic_formula": "-25.3797780275796*(1 - 0.00939865869807924*x_2)**2 + 0.190449371933937*log(9.97503852844238*x_1 - 0.196172401309013) + 25.4568401128054"
+    "symbolic_formula": "0.47896930839298*x_2 + 0.191690653562546*log(9.99767971038818*x_1 - 0.18799951672554) + 0.0578483121786584"
 }
