@@ -1,0 +1,65 @@
+﻿C:\Users\user\miniconda3\envs\pykan-new\python.exe D:\pykan\github\workflows\Hyein\co2rr_price_tuning.py 
+This script is running on cpu.
+이상치 제거 후 데이터 수: 2378 개 (123 개 제거됨)
+--- 이상치 제거 완료 ---
+
+전체 데이터셋 크기: 2378
+훈련셋 크기: 1521 (64.0%)
+검증셋 크기: 381 (16.0%)
+테스트셋 크기: 476 (20.0%)
+[MultKAN Sweep] Training model 1/1 -- seed # 1 (params={'lr': 0.1, 'lamb': 5e-05}, prune=True(th=0.05))
+| train_loss: 2.86e-03 | test_loss: 3.18e-03 | reg: 3.28e+00 | : 100%|█| 50/50 [00:22<00:00,  2.19it
+| train_loss: 2.23e-03 | test_loss: 2.42e-03 | reg: 2.80e+00 | : 100%|█| 50/50 [00:26<00:00,  1.90it
+description:   0%|                                                           | 0/50 [00:00<?, ?it/s]
+[MultKAN Sweep] Error on model 1/1 -- seed #1: No active exception to reraise
+[MultKAN Sweep] Training model 1/1 -- seed # 2 (params={'lr': 0.1, 'lamb': 5e-05}, prune=True(th=0.05))
+| train_loss: 2.91e-03 | test_loss: 3.24e-03 | reg: 3.31e+00 | : 100%|█| 50/50 [00:27<00:00,  1.81it
+| train_loss: 2.71e-03 | test_loss: 3.25e-03 | reg: 2.89e+00 | : 100%|█| 50/50 [00:30<00:00,  1.65it
+| train_loss: 7.69e-03 | test_loss: 7.53e-03 | reg: 2.26e+00 | : 100%|█| 50/50 [00:16<00:00,  2.95it
+| train_loss: 8.34e-03 | test_loss: 9.02e-03 | reg: 2.19e+00 | : 100%|█| 50/50 [00:22<00:00,  2.23it
+| train_loss: 7.94e-03 | test_loss: 9.10e-03 | reg: 2.31e+00 | : 100%|█| 50/50 [00:20<00:00,  2.42it
+| train_loss: 7.58e-03 | test_loss: 9.37e-03 | reg: 2.45e+00 | : 100%|█| 50/50 [00:19<00:00,  2.58it
+[MultKAN Sweep] Training model 1/1 -- seed # 3 (params={'lr': 0.1, 'lamb': 5e-05}, prune=True(th=0.05))
+| train_loss: 2.66e-03 | test_loss: 3.01e-03 | reg: 3.09e+00 | : 100%|█| 50/50 [00:23<00:00,  2.11it
+| train_loss: 2.61e-03 | test_loss: 2.88e-03 | reg: 2.86e+00 | : 100%|█| 50/50 [00:23<00:00,  2.13it
+description:   0%|                                                           | 0/50 [00:00<?, ?it/s]
+[MultKAN Sweep] Error on model 1/1 -- seed #3: No active exception to reraise
+Best configuration:
+{
+  "params": {
+    "lamb": 5e-05,
+    "lamb_coef": 0.1,
+    "lamb_coefdiff": 0.1,
+    "lamb_entropy": 0.1,
+    "lr": 0.1,
+    "prune": true,
+    "pruning_th": 0.05,
+    "update_grid": true,
+    "width": "[[8, 0], [8, 0], [1, 0]]"
+  },
+  "n_trials": 3,
+  "r2_train_mean": -65.6677004438062,
+  "r2_train_std": 57.733236364433225,
+  "r2_val_mean": -65.66812259640584,
+  "r2_val_std": 57.7325051746821,
+  "r2_test_mean": -65.6681071266688,
+  "r2_test_std": 57.7325319690526,
+  "train_loss_mean": 666.0032714797804,
+  "train_loss_std": 576.7672525512404,
+  "val_loss_mean": 666.0041551214332,
+  "val_loss_std": 576.7657220390022,
+  "test_loss_mean": 666.0039252151424,
+  "test_loss_std": 576.7661202483788,
+  "spline_train_loss_mean": 0.007742977701127529,
+  "spline_train_loss_std": 0.0,
+  "spline_test_loss_mean": 0.009214566089212894,
+  "spline_test_loss_std": 0.0
+}
+| train_loss: 3.03e-03 | test_loss: 3.41e-03 | reg: 3.28e+00 | : 100%|█| 50/50 [00:23<00:00,  2.09it
+| train_loss: 2.88e-03 | test_loss: 3.40e-03 | reg: 2.93e+00 | : 100%|█| 50/50 [00:23<00:00,  2.10it
+| train_loss: 7.23e-03 | test_loss: 7.40e-03 | reg: 2.65e+00 | : 100%|█| 50/50 [00:19<00:00,  2.59it
+| train_loss: 6.54e-03 | test_loss: 7.33e-03 | reg: 2.50e+00 | : 100%|█| 50/50 [00:20<00:00,  2.44it
+| train_loss: 7.82e-03 | test_loss: 9.30e-03 | reg: 2.46e+00 | : 100%|█| 50/50 [00:20<00:00,  2.49it
+| train_loss: 7.55e-03 | test_loss: 9.46e-03 | reg: 2.62e+00 | : 100%|█| 50/50 [00:16<00:00,  3.06it
+
+Process finished with exit code 0

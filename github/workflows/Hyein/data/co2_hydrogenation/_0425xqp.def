@@ -1,0 +1,10 @@
+SLAVE:
+INPUT: _0425xqp.inm
+MODNAME: apmain
+RUNID: _0425xqp
+NEW_RUNID: _0425xqp
+OLD_RUNID: _0425xqp
+PDF: _0425xqp.appdf
+USERNAME: user
+XMOD: C:\Program Files\AspenTech\Aspen Plus V14.0\Engine\xeq\apmain
+DBCONN: _0425xqp.ads

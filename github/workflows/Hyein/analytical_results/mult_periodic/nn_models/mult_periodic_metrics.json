@@ -1,0 +1,14 @@
+{
+    "dataset": "mult_periodic",
+    "test_r2": 0.9808581930789234,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.01,
+        "hidden_layer_sizes": [
+            100,
+            100
+        ],
+        "alpha": 0.001,
+        "activation": "relu"
+    }
+}

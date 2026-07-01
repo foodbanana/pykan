@@ -1,0 +1,17 @@
+ IDSET ID_606 (NPOINT) (#1)                                                     
+ IDSET ID_607 (PROPERTIES) (259 *5 241 *2 255 *2 256 *2 260 *2 126 *6 258       
+ *5)                                                                            
+ LSET L_385 (%ID_607 & %ID_606)                                                 
+ DSET CONV-SUM SPEC-SUMMARY CNV_SPEC @L_385 ("D-H2" 6.26291461D-02              
+ 1.00000000D-01 6.26291461D-01 3.54225093D-01 "#" "$OLVER02" )                  
+ DSET CONV-SUM SPEC-SUMMARY COMPSTAT @L_1 (0)                                   
+ IDSET ID_608 (NPOINT) (#3)                                                     
+ IDSET ID_609 (PROPERTIES) (263 *5 241 *2 41151 *2 256 *2 257 *6 126 *6 258 *5  
+ )                                                                              
+ LSET L_386 (%ID_609 & %ID_608)                                                 
+ DSET CONV-SUM TEAR-SUMMARY CNV_TEAR @L_386 ("115" 2.13088145D-08               
+ 9.76423404D-06 9.76423404D-01 "O2 MOLEFLOW" "#" "$OLVER01" "120"               
+ 2.22843960D-08 6.12677560D-06 6.12677560D-01 "O2 MOLEFLOW" "#" "$OLVER01"      
+ "221" 2.88484775D-09 1.25287899D-07 1.25287899D-02 "MEOH MOLEFLOW" "#"         
+ "$OLVER01" )                                                                   
+ DSET CONV-SUM TEAR-SUMMARY COMPSTAT @L_1 (0)                                   

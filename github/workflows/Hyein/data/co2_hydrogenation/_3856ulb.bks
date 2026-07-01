@@ -1,0 +1,13 @@
+ ? SETUP UNITS-SET SET1 ? \ UNITSET BASESET = SI (1 1 1 1 1 1 1 1 1 1 1 18 15 1 
+ 1 1 1 1 3 5 1 4 1 1 1 1 1 1 1 1 4 1 1 1 1 1 1 1 12 10 1 1 1 1 1 1 2 1 1 1 1 1  
+ 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 4 5 1 1 1 1 1 1 1 1 1 1 1 1 7 1 1 1 
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  
+ 1 1 1 1 1 1 1 7 1 1 1 18 1 1 1 1 1 1 1 1 1 1 1 1 1) \                          
+ ? BLOCK HEATER E110 ? ; SET1 ; \ PARAM TEMP = 235.0 <22> <4> PRES = 0.0 <20>   
+ <5> DPPARMOPT = NO \ ? BLOCK RPLUG R100 ? ; SET1 ; \ BLOCK-OPTION BLKOPFREWAT  
+ = NO \ \ PARAM TYPE = ADIABATIC LENGTH = 5.0 <17> <1> DIAM = 1.60 <17> <1>     
+ PHASE = V NPHASE = 1 IGN-CAT-VOL = NO CAT-PRESENT = YES OPT-PDROP = SPECIFIED  
+ BED-VOIDAGE = .50 <0> <0> CAT-RHO = 1775.0 <3> <1> \ \ REACTIONS RXN-ID =      
+ (R-01VD) \ ? DISABLE ? ; SET1 ; \ SENSITIVITY LIST = ( "S-CO2" "S-REACT" ) \ \ 
+ CALCULATOR LIST = ( "C-H2" ) \ \ DESIGN-SPEC LIST = ( "D-MEOH" "D-SPLITH" ) \  
+ "\@"                                                                           

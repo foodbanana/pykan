@@ -1,0 +1,10 @@
+INPUT: direct_hydrogenation_v8_heat_integration_corrected_210C_recovered.inm
+MODNAME: apmain
+RUNID: direct_hydrogenation_v8_heat_integration_corrected_210C_recovered
+NEW_RUNID: direct_hydrogenation_v8_heat_integration_corrected_210C_recovered
+OLD_RUNID: direct_hydrogenation_v8_heat_integration_corrected_210C_recovered
+PDF: direct_hydrogenation_v8_heat_integration_corrected_210C_recovered.appdf
+USERNAME: user
+XMOD: C:\Program Files\AspenTech\Aspen Plus V14.0\Engine\xeq\apmain
+SPONLY:
+DBCONN: _4411szl.ads

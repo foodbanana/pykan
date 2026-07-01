@@ -1,0 +1,15 @@
+{
+    "range": "0.10<x3<0.19 & 0.10<x14<0.89",
+    "test_r2": 0.1386783991743492,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.0005,
+        "hidden_layer_sizes": [
+            64,
+            64
+        ],
+        "alpha": 0.01,
+        "activation": "tanh"
+    },
+    "n_samples": 25
+}

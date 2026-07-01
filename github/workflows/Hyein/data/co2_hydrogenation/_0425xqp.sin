@@ -1,0 +1,604 @@
+ >>ORIGINAL RUN                           FEBRUARY 5, 2026    
+   2:24:58 P.M.                           THURSDAY    
+   INPUT FILE: _0425xqp.inm
+   RUN ID : _0425xqp
+          1    ;
+          2    ;Input file created by Aspen Plus Rel. 40.0 at 14:24:57 Thu Feb 5, 2026
+          3    ;Directory D:\pykan\github\workflows\Hyein\data\co2_hydrogenation  Runid DIRECT_HYDROGENATION_V8_HEAT_INTEGRATION_CORRECTED
+          4    ;
+          5
+          6
+          7    DYNAMICS
+          8        DYNAMICS RESULTS=ON
+          9
+         10    IN-UNITS SI VOLUME-FLOW='l/sec' ENTHALPY-FLO=MW POWER=kW  &
+         11            PRESSURE=bar TEMPERATURE=C DELTA-T=C  &
+         12            MOLE-ENTHALP='MJ/kmol' MASS-ENTHALP='MJ/kg' ELEC-POWER=kW  &
+         13            HEAT=MJ PDROP-PER-HT='mbar/m' PDROP=bar  &
+         14            VOL-ENTHALPY='MJ/cum' SHORT-LENGTH=mm VOLUME-GFLOW='l/sec'
+         15
+         16    DEF-STREAMS CONVEN ALL
+         17
+         18    SIM-OPTIONS MASS-BAL-CHE=YES FLASH-TOL=1E-05 PARADIGM=SM  &
+         19            GAMUS-BASIS=AQUEOUS GHG-STANDARD=USEPA-2009  &
+         20            CARBON-FEE=0.051
+         21
+         22    MODEL-OPTION
+         23
+         24    DATABANKS 'APESV140 ACIDGAS' / 'APV140 PURE40' /  &
+         25            'APV140 AQUEOUS' / 'APV140 SOLIDS' / 'APV140 INORGANIC' &
+         26             / 'APESV140 AP-EOS' / 'NISTV140 NIST-TRC' / NOASPENPCD
+         27
+         28    PROP-SOURCES 'APESV140 ACIDGAS' / 'APV140 PURE40' /  &
+         29            'APV140 AQUEOUS' / 'APV140 SOLIDS' / 'APV140 INORGANIC' &
+         30             / 'APESV140 AP-EOS' / 'NISTV140 NIST-TRC'
+         31
+         32    COMPONENTS
+         33        H2O H2O /
+         34        CO2 CO2 /
+         35        N2 N2 /
+         36        O2 O2 /
+         37        CO CO /
+         38        H2 H2 /
+         39        MEOH CH4O
+         40
+         41    HENRY-COMPS HC-1 CO2 O2
+         42
+         43    SOLVE
+         44        RUN-MODE MODE=SIM
+         45
+         46    FLOWSHEET
+         47        BLOCK M100 IN=302 109 131 OUT=111
+         48        BLOCK R100 IN=113 OUT=114
+         49        BLOCK V120 IN=121 OUT=130 140
+         50        BLOCK S130 IN=130 OUT=131 PURGE1
+         51        BLOCK VLV140 IN=140 OUT=141
+         52        BLOCK D200 IN=223 200 OUT=MEOH 220
+         53        BLOCK SEP150 IN=150 OUT=VENT2 151
+         54        BLOCK C100 IN=CO2 OUT=100
+         55        BLOCK E100 IN=100 OUT=101
+         56        BLOCK V100 IN=101 OUT=102 H2O-1
+         57        BLOCK V101 IN=104 OUT=105 H2O-2
+         58        BLOCK E101 IN=103 OUT=104
+         59        BLOCK C101 IN=102 OUT=103
+         60        BLOCK C102 IN=105 OUT=106
+         61        BLOCK C103 IN=108 OUT=109
+         62        BLOCK V102 IN=107 OUT=108 H2O-3
+         63        BLOCK E102 IN=106 OUT=107
+         64        BLOCK C301 IN=301 OUT=302
+         65        BLOCK HX100 IN=115 111 OUT=119 112
+         66        BLOCK E120 IN=120 OUT=121
+         67        BLOCK S100 IN=114 OUT=115 116
+         68        BLOCK M101 IN=119 118 OUT=120
+         69        BLOCK S220 IN=220 OUT=H2O-4 221
+         70        BLOCK HX220 IN=116 221 OUT=117 222
+         71        BLOCK HX150 IN=117 152 OUT=118 200
+         72        BLOCK E110 IN=112 OUT=113
+         73        BLOCK V140 IN=141 OUT=VENT1 150
+         74        BLOCK C300 IN=H2 OUT=300
+         75        BLOCK E300 IN=300 OUT=301
+         76        BLOCK P150 IN=151 OUT=152
+         77        BLOCK E220 IN=222 OUT=223
+         78
+         79    PROPERTIES NRTL-RK HENRY-COMPS=HC-1
+         80        PROPERTIES NRTL / RK-SOAVE / SRK / UNIFAC
+         81
+         82    PROP-DATA HENRY-1
+         83        IN-UNITS SI VOLUME-FLOW='l/sec' ENTHALPY-FLO=MW POWER=kW  &
+         84            PRESSURE=bar TEMPERATURE=C DELTA-T=C  &
+         85            MOLE-ENTHALP='MJ/kmol' MASS-ENTHALP='MJ/kg' ELEC-POWER=kW  &
+         86            HEAT=MJ PDROP-PER-HT='mbar/m' PDROP=bar  &
+         87            VOL-ENTHALPY='MJ/cum' SHORT-LENGTH=mm VOLUME-GFLOW='l/sec'
+         88        PROP-LIST HENRY
+         89        BPVAL CO2 H2O 89.13707454 -6147.700000 -10.19100000  &
+         90            -.0100000000 -.1500000000 199.8500000 0.0
+         91        BPVAL O2 H2O 144.4080745 -7775.060000 -18.39740000  &
+         92            -9.4435400E-3 .8500000000 74.85000000 0.0
+         93        BPVAL CO2 MEOH 15.46987454 -3426.699951 1.510800000  &
+         94            -.0254510000 0.0 20.00000000 0.0
+         95        BPVAL O2 MEOH 26.69817654 -767.5700070 -2.977400000  &
+         96            2.19200000E-3 -25.00000000 50.00000000 0.0
+         97
+         98    PROP-DATA NRTL-1
+         99        IN-UNITS SI VOLUME-FLOW='l/sec' ENTHALPY-FLO=MW POWER=kW  &
+        100            PRESSURE=bar TEMPERATURE=C DELTA-T=C  &
+        101            MOLE-ENTHALP='MJ/kmol' MASS-ENTHALP='MJ/kg' ELEC-POWER=kW  &
+        102            HEAT=MJ PDROP-PER-HT='mbar/m' PDROP=bar  &
+        103            VOL-ENTHALPY='MJ/cum' SHORT-LENGTH=mm VOLUME-GFLOW='l/sec'
+        104        PROP-LIST NRTL
+        105        BPVAL H2O CO2 0.0 0.0 .2000000000 0.0 0.0 0.0  &
+        106            -273.1500000 726.8500000
+        107        BPVAL CO2 H2O 0.0 0.0 .2000000000 0.0 0.0 0.0  &
+        108            -273.1500000 726.8500000
+        109        BPVAL H2O MEOH 0.0 425.3230000 .2994000000 0.0 0.0 0.0  &
+        110            60.00000000 95.00000000
+        111        BPVAL MEOH H2O 0.0 -127.7571000 .2994000000 0.0 0.0 0.0  &
+        112            60.00000000 95.00000000
+        113        BPVAL CO2 MEOH -.3064720000 6190.880000 .1539330000 0.0  &
+        114            0.0 0.0 -45.01500000 30.00000000
+        115        BPVAL MEOH CO2 -1.952170000 594.6850000 .1539330000 0.0  &
+        116            0.0 0.0 -45.01500000 30.00000000
+        117        BPVAL N2 O2 -3.143990000 125.0070000 .1000000000 0.0 0.0  &
+        118            0.0 -208.3142000 -168.9140000
+        119        BPVAL O2 N2 3.669170000 -127.5790000 .1000000000 0.0 0.0  &
+        120            0.0 -208.3142000 -168.9140000
+        121        BPVAL N2 CO -9.120620000 626.5970000 .1000000000 0.0 0.0  &
+        122            0.0 -203.1500000 -176.4311000
+        123        BPVAL CO N2 12.44230000 -869.8170000 .1000000000 0.0 0.0  &
+        124            0.0 -203.1500000 -176.4311000
+        125
+        126    PROP-DATA RKSKBV-1
+        127        IN-UNITS SI VOLUME-FLOW='l/sec' ENTHALPY-FLO=MW POWER=kW  &
+        128            PRESSURE=bar TEMPERATURE=C DELTA-T=C  &
+        129            MOLE-ENTHALP='MJ/kmol' MASS-ENTHALP='MJ/kg' ELEC-POWER=kW  &
+        130            HEAT=MJ PDROP-PER-HT='mbar/m' PDROP=bar  &
+        131            VOL-ENTHALPY='MJ/cum' SHORT-LENGTH=mm VOLUME-GFLOW='l/sec'
+        132        PROP-LIST RKSKBV
+        133        BPVAL H2O CO2 .0737000000 0.0 0.0 -273.1500000 726.8500000
+        134        BPVAL CO2 H2O .0737000000 0.0 0.0 -273.1500000 726.8500000
+        135        BPVAL H2O MEOH -.0789000000 0.0 0.0 -273.1500000  &
+        136            726.8500000
+        137        BPVAL MEOH H2O -.0789000000 0.0 0.0 -273.1500000  &
+        138            726.8500000
+        139        BPVAL CO2 N2 -.0315000000 0.0 0.0 -273.1500000 726.8500000
+        140        BPVAL N2 CO2 -.0315000000 0.0 0.0 -273.1500000 726.8500000
+        141        BPVAL CO2 H2 -.3426000000 0.0 0.0 -273.1500000 726.8500000
+        142        BPVAL H2 CO2 -.3426000000 0.0 0.0 -273.1500000 726.8500000
+        143        BPVAL CO2 MEOH .0148000000 0.0 0.0 -273.1500000  &
+        144            726.8500000
+        145        BPVAL MEOH CO2 .0148000000 0.0 0.0 -273.1500000  &
+        146            726.8500000
+        147        BPVAL N2 O2 -7.8000000E-3 0.0 0.0 -273.1500000 726.8500000
+        148        BPVAL O2 N2 -7.8000000E-3 0.0 0.0 -273.1500000 726.8500000
+        149        BPVAL N2 CO .0374000000 0.0 0.0 -273.1500000 726.8500000
+        150        BPVAL CO N2 .0374000000 0.0 0.0 -273.1500000 726.8500000
+        151        BPVAL N2 H2 .0978000000 0.0 0.0 -273.1500000 726.8500000
+        152        BPVAL H2 N2 .0978000000 0.0 0.0 -273.1500000 726.8500000
+        153        BPVAL N2 MEOH -.2881000000 0.0 0.0 -273.1500000  &
+        154            726.8500000
+        155        BPVAL MEOH N2 -.2881000000 0.0 0.0 -273.1500000  &
+        156            726.8500000
+        157        BPVAL CO H2 .0804000000 0.0 0.0 -273.1500000 726.8500000
+        158        BPVAL H2 CO .0804000000 0.0 0.0 -273.1500000 726.8500000
+        159
+        160    PROP-DATA SRKKIJ-1
+        161        IN-UNITS SI VOLUME-FLOW='l/sec' ENTHALPY-FLO=MW POWER=kW  &
+        162            PRESSURE=bar TEMPERATURE=C DELTA-T=C  &
+        163            MOLE-ENTHALP='MJ/kmol' MASS-ENTHALP='MJ/kg' ELEC-POWER=kW  &
+        164            HEAT=MJ PDROP-PER-HT='mbar/m' PDROP=bar  &
+        165            VOL-ENTHALPY='MJ/cum' SHORT-LENGTH=mm VOLUME-GFLOW='l/sec'
+        166        PROP-LIST SRKKIJ
+        167        BPVAL CO2 CO -.0154400000 0.0 0.0 -273.1500000 726.8500000
+        168        BPVAL CO CO2 -.0154400000 0.0 0.0 -273.1500000 726.8500000
+        169
+        170    DEF-STREAMS CONVEN 151
+        171
+        172    PROP-SET CO2WAPP WAPP SUBSTREAM=MIXED COMPS=CO2 PHASE=T
+        173
+        174    PROP-SET COWAPP WAPP SUBSTREAM=MIXED COMPS=CO PHASE=T
+        175
+        176    PROP-SET MEOHWAPP WAPP SUBSTREAM=MIXED COMPS=MEOH PHASE=T
+        177
+        178    STREAM 109
+        179        SUBSTREAM MIXED TEMP=121.017403 PRES=75
+        180        MASS-FLOW H2O 0.00440186785 / CO2 5.27360673 / N2  &
+        181            0.00470499156 / O2 0.00122611023
+        182
+        183    STREAM 113
+        184        SUBSTREAM MIXED TEMP=210. PRES=75. MOLE-FLOW=35.533021116
+        185        MASS-FRAC H2O 0.00142483958 / CO2 0.76706470134 / N2  &
+        186            0.00501647944 / O2 0.00180833992 / CO 0.10553105816 /  &
+        187            H2 0.10841220145 / MEOH 0.01074238009
+        188
+        189    STREAM 114
+        190        SUBSTREAM MIXED TEMP=285.689827 PRES=75 MASS-FLOW=33.9173238
+        191        MASS-FRAC H2O 0.0587977175 / CO2 0.630343899 / N2  &
+        192            0.00553159207 / O2 0.00324997282 / CO 0.110028299 /  &
+        193            H2 0.0864828826 / MEOH 0.105565638
+        194
+        195    STREAM 115
+        196        SUBSTREAM MIXED TEMP=285.689827 PRES=75 MASS-FLOW=20.3503943
+        197        MASS-FRAC H2O 0.0587977175 / CO2 0.630343899 / N2  &
+        198            0.00553159207 / O2 0.00324997282 / CO 0.110028299 /  &
+        199            H2 0.0864828826 / MEOH 0.105565638
+        200
+        201    STREAM 117
+        202        SUBSTREAM MIXED TEMP=110 PRES=75 MASS-FLOW=12.5728017
+        203        MASS-FRAC H2O 0.0637285679 / CO2 0.601477508 / N2  &
+        204            0.00598740449 / O2 0.00349384871 / CO 0.111964456 /  &
+        205            H2 0.0987696902 / MEOH 0.114578525
+        206
+        207    STREAM 118
+        208        SUBSTREAM MIXED TEMP=81.3957877 PRES=75 MASS-FLOW=13.5669295
+        209        MASS-FRAC H2O 0.0587977175 / CO2 0.630343899 / N2  &
+        210            0.00553159207 / O2 0.00324997282 / CO 0.110028299 /  &
+        211            H2 0.0864828826 / MEOH 0.105565638
+        212
+        213    STREAM 119
+        214        SUBSTREAM MIXED TEMP=93.9135644 PRES=75 MASS-FLOW=19.3551317
+        215        MASS-FRAC H2O 0.0633064482 / CO2 0.600130955 / N2  &
+        216            0.00705659212 / O2 0.00368530706 / CO 0.112902991 /  &
+        217            H2 0.0987196948 / MEOH 0.114198012
+        218
+        219    STREAM 131
+        220        SUBSTREAM MIXED TEMP=35.0000007 PRES=75 MASS-FLOW=27.9593269
+        221        MASS-FRAC H2O 0.00091089552 / CO2 0.747686323 / N2  &
+        222            0.00654206144 / O2 0.00389867963 / CO 0.129819479 /  &
+        223            H2 0.103862979 / MEOH 0.0072795815
+        224
+        225    STREAM 152
+        226        SUBSTREAM MIXED TEMP=33.94 PRES=1.3
+        227        MASS-FLOW H2O 2.0463205042 / CO2 0. / N2 0. / O2 0. /  &
+        228            CO 0. / H2 0. / MEOH 3.5213191291
+        229
+        230    STREAM 221
+        231        SUBSTREAM MIXED TEMP=99.1071946 PRES=1 MASS-FLOW=2.04063406
+        232        MASS-FRAC H2O 0.985636124 / MEOH 0.014363876
+        233
+        234    STREAM 223
+        235        SUBSTREAM MIXED TEMP=177.443659 PRES=1.34  &
+        236            MASS-FLOW=3.09876134
+        237        MASS-FRAC H2O 0.951320017 / MEOH 0.0486799827
+        238
+        239    STREAM CO2
+        240        SUBSTREAM MIXED TEMP=16 PRES=1.99914 MASS-FLOW=5.6
+        241        MASS-FLOW H2O 0.0200508813 / CO2 5.24285636 / N2  &
+        242            0.00467838639 / O2 0.0012188966
+        243
+        244    STREAM H2
+        245        SUBSTREAM MIXED TEMP=25 PRES=10 MOLE-FLOW=0.337216322
+        246        MOLE-FRAC H2 1
+        247
+        248    BLOCK M100 MIXER
+        249        PARAM
+        250
+        251    BLOCK M101 MIXER
+        252        PARAM
+        253
+        254    BLOCK S100 FSPLIT
+        255        FRAC 115 0.6
+        256
+        257    BLOCK S130 FSPLIT
+        258        FRAC PURGE1 0.01
+        259
+        260    BLOCK S220 FSPLIT
+        261        FRAC H2O-4 0.485
+        262
+        263    BLOCK SEP150 SEP
+        264        PARAM
+        265        FRAC STREAM=VENT2 SUBSTREAM=MIXED COMPS=H2O CO2 N2 O2  &
+        266            CO H2 MEOH FRACS=0. 1. 1. 1. 1. 1. 0.
+        267        FLASH-SPECS VENT2 NPHASE=1 FREE-WATER=NO PHASE=V
+        268
+        269    BLOCK E100 HEATER
+        270        PARAM TEMP=30. PRES=0. DPPARMOPT=NO
+        271
+        272    BLOCK E101 HEATER
+        273        PARAM TEMP=30. PRES=0. DPPARMOPT=NO
+        274
+        275    BLOCK E102 HEATER
+        276        PARAM TEMP=30. PRES=0. DPPARMOPT=NO
+        277
+        278    BLOCK E110 HEATER
+        279        PARAM TEMP=210. PRES=0. DPPARMOPT=NO
+        280
+        281    BLOCK E120 HEATER
+        282        PARAM TEMP=35. PRES=0. DPPARMOPT=NO
+        283        HCURVE 1 NPOINT=25
+        284
+        285    BLOCK E220 HEATER
+        286        PARAM TEMP=280. PRES=0. DPPARMOPT=NO
+        287
+        288    BLOCK E300 HEATER
+        289        PARAM TEMP=35. PRES=0. DPPARMOPT=NO
+        290
+        291    BLOCK V100 FLASH2
+        292        PARAM PRES=0. DUTY=0.
+        293
+        294    BLOCK V101 FLASH2
+        295        PARAM PRES=0. DUTY=0.
+        296
+        297    BLOCK V102 FLASH2
+        298        PARAM PRES=0. DUTY=0.
+        299
+        300    BLOCK V120 FLASH2
+        301        PARAM PRES=0. DUTY=0.0
+        302
+        303    BLOCK V140 FLASH2
+        304        PARAM PRES=0. DUTY=0.
+        305
+        306    BLOCK HX100 HEATX
+        307        PARAM T-COLD=210. CALC-TYPE=DESIGN U-OPTION=PHASE  &
+        308            F-OPTION=CONSTANT CALC-METHOD=SHORTCUT
+        309        FEEDS HOT=115 COLD=111
+        310        OUTLETS-HOT 119
+        311        OUTLETS-COLD 112
+        312        HOT-SIDE DP-OPTION=CONSTANT DPPARMOPT=NO
+        313        COLD-SIDE DP-OPTION=CONSTANT DPPARMOPT=NO
+        314        TQ-PARAM CURVE=YES
+        315
+        316    BLOCK HX150 HEATX
+        317        PARAM T-COLD=83. CALC-TYPE=DESIGN U-OPTION=PHASE  &
+        318            F-OPTION=CONSTANT CALC-METHOD=SHORTCUT
+        319        FEEDS HOT=117 COLD=152
+        320        OUTLETS-HOT 118
+        321        OUTLETS-COLD 200
+        322        HOT-SIDE DP-OPTION=CONSTANT DPPARMOPT=NO
+        323        COLD-SIDE DP-OPTION=CONSTANT DPPARMOPT=NO
+        324        TQ-PARAM CURVE=YES
+        325
+        326    BLOCK HX220 HEATX
+        327        PARAM T-COLD=208. CALC-TYPE=DESIGN U-OPTION=PHASE  &
+        328            F-OPTION=CONSTANT CALC-METHOD=SHORTCUT
+        329        FEEDS HOT=116 COLD=221
+        330        OUTLETS-HOT 117
+        331        OUTLETS-COLD 222
+        332        HOT-SIDE DP-OPTION=CONSTANT DPPARMOPT=NO
+        333        COLD-SIDE DP-OPTION=CONSTANT DPPARMOPT=NO
+        334        TQ-PARAM CURVE=YES
+        335
+        336    BLOCK D200 RADFRAC
+        337        PARAM NSTAGE=40 ALGORITHM=STANDARD MAXOL=25 DAMPING=NONE
+        338        PARAM2
+        339        COL-CONFIG CONDENSER=TOTAL REBOILER=NONE
+        340        FEEDS 223 40 ON-STAGE / 200 20 ABOVE-STAGE
+        341        PRODUCTS MEOH 1 L / 220 40 L
+        342        P-SPEC 1 1.
+        343        COL-SPECS DP-STAGE=0.01 MOLE-RR=1.2
+        344
+        345    BLOCK R100 RPLUG
+        346        PARAM TYPE=ADIABATIC LENGTH=5. DIAM=1.600000000 NPHASE=1  &
+        347            PHASE=V IGN-CAT-VOL=NO CAT-PRESENT=YES BED-VOIDAGE=0.5  &
+        348            CAT-RHO=1775. OPT-PDROP=SPECIFIED
+        349        BLOCK-OPTION FREE-WATER=NO
+        350        REACTIONS RXN-IDS=R-01VD
+        351
+        352    BLOCK P150 PUMP
+        353        PARAM PRES=1.3 EFF=0.8
+        354
+        355    BLOCK C100 COMPR
+        356        PARAM TYPE=ISENTROPIC PRATIO=2.92 SB-MAXIT=30 SB-TOL=0.0001
+        357
+        358    BLOCK C101 COMPR
+        359        PARAM TYPE=ISENTROPIC PRATIO=2.92 SB-MAXIT=30 SB-TOL=0.0001
+        360
+        361    BLOCK C102 COMPR
+        362        PARAM TYPE=ISENTROPIC PRATIO=2.92 SB-MAXIT=30 SB-TOL=0.0001
+        363
+        364    BLOCK C103 COMPR
+        365        PARAM TYPE=ISENTROPIC PRES=75. SB-MAXIT=30 SB-TOL=0.0001
+        366
+        367    BLOCK C300 COMPR
+        368        PARAM TYPE=ISENTROPIC PRATIO=2.74 SB-MAXIT=30 SB-TOL=0.0001
+        369
+        370    BLOCK C301 COMPR
+        371        PARAM TYPE=ISENTROPIC PRES=75. SB-MAXIT=30 SB-TOL=0.0001
+        372
+        373    BLOCK VLV140 VALVE
+        374        PARAM P-OUT=1.
+        375
+        376    UTILITY POWER GENERAL
+        377        COST ELEC-PRICE=2.77777778E-7
+        378        PARAM UTILITY-TYPE=ELECTRICITY CALCCO2=YES FACTORSOURCE= &
+        379            "US-EPA-Rule-E9-5711" FUELSOURCE="Natural_gas"  &
+        380            CO2FACTOR=5.02900000E-8
+        381
+        382    UTILITY STEAM GENERAL
+        383        DESCRIPTION  &
+        384            'Low Pressure Steam, Inlet Temp=125 C, Outlet Temp=124 C'
+        385        COST PRICE=.1000000000
+        386        PARAM UTILITY-TYPE=STEAM TIN=125. TOUT=124. VFRAC=1.  &
+        387            VFR-OUT=0. CALOPT=FLASH MIN-TAPP=10. CALCCO2=YES  &
+        388            FACTORSOURCE="US-EPA-Rule-E9-5711" FUELSOURCE="Natural_gas"  &
+        389            CO2FACTOR=5.02900000E-8 HTC=6000.000000
+        390
+        391    DESIGN-SPEC D-H2
+        392        DEFINE H2 MOLE-FLOW STREAM=113 SUBSTREAM=MIXED COMPONENT=H2  &
+        393            UOM="kmol/sec"
+        394        DEFINE CO2 MOLE-FLOW STREAM=113 SUBSTREAM=MIXED  &
+        395            COMPONENT=CO2 UOM="kmol/sec"
+        396        SPEC "H2/CO2" TO "3"
+        397        TOL-SPEC "0.1"
+        398        VARY STREAM-VAR STREAM=H2 SUBSTREAM=MIXED VARIABLE=MOLE-FLOW  &
+        399            UOM="kmol/sec"
+        400        LIMITS "0.1" "2"
+        401
+        402    DESIGN-SPEC D-MEOH
+        403        DEFINE MEOH STREAM-VAR STREAM=MEOH SUBSTREAM=MIXED  &
+        404            VARIABLE=MASS-FLOW UOM="kg/sec"
+        405        SPEC "MEOH" TO "3.5"
+        406        TOL-SPEC "0.01"
+        407        VARY STREAM-VAR STREAM=CO2 SUBSTREAM=MIXED  &
+        408            VARIABLE=MASS-FLOW UOM="kg/sec"
+        409        LIMITS "4" "5.7"
+        410
+        411    DESIGN-SPEC D-SPLITH
+        412        DEFINE TR STREAM-VAR STREAM=113 SUBSTREAM=MIXED  &
+        413            VARIABLE=TEMP UOM="C"
+        414        SPEC "TR" TO "210"
+        415        TOL-SPEC "0.1"
+        416        VARY BLOCK-VAR BLOCK=S100 SENTENCE=FRAC VARIABLE=FRAC  &
+        417            ID1=115
+        418        LIMITS "0.6" "1"
+        419
+        420    EO-CONV-OPTI
+        421        DMO-PARAMS DEFAULT RESCVG=2E-06 OBJCVG=2E-06
+        422
+        423    CALCULATOR C-4STAGE
+        424        DEFINE P4 BLOCK-VAR BLOCK=C103 VARIABLE=PRES SENTENCE=PARAM  &
+        425            UOM="bar"
+        426        DEFINE P0 STREAM-VAR STREAM=CO2 SUBSTREAM=MIXED  &
+        427            VARIABLE=PRES UOM="bar"
+        428        DEFINE PR1 BLOCK-VAR BLOCK=C100 VARIABLE=PRATIO  &
+        429            SENTENCE=PARAM
+        430        DEFINE PR2 BLOCK-VAR BLOCK=C101 VARIABLE=PRATIO  &
+        431            SENTENCE=PARAM
+        432        DEFINE PR3 BLOCK-VAR BLOCK=C102 VARIABLE=PRATIO  &
+        433            SENTENCE=PARAM
+        434        DEFINE PH2 BLOCK-VAR BLOCK=C301 VARIABLE=PRES  &
+        435            SENTENCE=PARAM UOM="bar"
+        436    F     PR1 = (P4/P0)**(0.25)
+        437    F     PR2 = PR1
+        438    F     PR3 = PR1
+        439    F     PH2 = P4
+        440        READ-VARS P4 P0
+        441        WRITE-VARS PR1 PR3 PR2 PH2
+        442        EXECUTE FIRST
+        443
+        444    CALCULATOR C-H2
+        445        DEFINE COREC MOLE-FLOW STREAM=131 SUBSTREAM=MIXED  &
+        446            COMPONENT=CO UOM="kmol/sec"
+        447        DEFINE CO2REC MOLE-FLOW STREAM=131 SUBSTREAM=MIXED  &
+        448            COMPONENT=CO2 UOM="kmol/sec"
+        449        DEFINE H2REC MOLE-FLOW STREAM=131 SUBSTREAM=MIXED  &
+        450            COMPONENT=H2 UOM="kmol/sec"
+        451        DEFINE CO2 MOLE-FLOW STREAM=CO2 SUBSTREAM=MIXED  &
+        452            COMPONENT=CO2 UOM="kmol/sec"
+        453        DEFINE H2 STREAM-VAR STREAM=H2 SUBSTREAM=MIXED  &
+        454            VARIABLE=MOLE-FLOW UOM="kmol/sec"
+        455    F     H2 = 2*COREC+3*(CO2+CO2REC)-H2REC
+        456        READ-VARS H2REC COREC CO2REC CO2
+        457        WRITE-VARS H2
+        458
+        459    SENSITIVITY S-CO2
+        460        DEFINE RESOLVE STREAM-VAR STREAM=MEOH SUBSTREAM=MIXED  &
+        461            VARIABLE=MASS-FLOW UOM="kg/sec"
+        462        TABULATE 1 "RESOLVE"
+        463        VARY STREAM-VAR STREAM=CO2 SUBSTREAM=MIXED  &
+        464            VARIABLE=MASS-FLOW UOM="kg/sec"
+        465        RANGE OPT-LIST=RANGE LOWER="5.7" UPPER="6" INCR="0.1"
+        466
+        467    SENSITIVITY S-REACT
+        468        DEFINE MEOH STREAM-VAR STREAM=MEOH SUBSTREAM=MIXED  &
+        469            VARIABLE=MASS-FLOW UOM="kg/sec"
+        470        DEFINE F203 STREAM-VAR STREAM=131 SUBSTREAM=MIXED  &
+        471            VARIABLE=MASS-FLOW UOM="kg/sec"
+        472        TABULATE 1 "MEOH"
+        473        TABULATE 2 "F203"
+        474        VARY BLOCK-VAR BLOCK=S130 SENTENCE=FRAC VARIABLE=FRAC  &
+        475            ID1=PURGE1
+        476        RANGE OPT-LIST=RANGE LOWER="0.001" UPPER="0.01" NPOINT="14"
+        477
+        478    CONV-OPTIONS
+        479        PARAM TOL=1E-05
+        480        WEGSTEIN MAXIT=1000
+        481        BROYDEN MAXIT=1000
+        482
+        483    STREAM-REPOR MOLEFLOW GLOBAL-PROPS=MEOHWAPP
+        484
+        485    PROPERTY-REP NOPARAM-PLUS
+        486
+        487    REACTIONS KISS16 LHHW
+        488        REAC-DATA 1 PHASE=V CBASIS=FUGACITY RBASIS=CAT-WT
+        489        RATE-CON 1 PRE-EXP=4.06E-06 ACT-ENERGY=11.69500000
+        490        STOIC 1 MIXED CO -1. / H2 -2. / MEOH 1.
+        491        DFORCE-EXP-1 1 MIXED CO 1. / MIXED H2 1.5 / MIXED MEOH  &
+        492            0.
+        493        DFORCE-EXP-2 1 MIXED H2 -0.5 / MIXED MEOH 1.
+        494        DFORCE-EQ-1 REACNO=1 A=-23.20062107 B=14225.40293
+        495        DFORCE-EQ-2 REACNO=1 A=28.89535557 B=2385.374068
+        496        ADSORP-EXP REACNO=1 CID=H2O SSID=MIXED EXPONENT=0. 1. 0.  &
+        497            1. 0. 1. / REACNO=1 CID=H2 SSID=MIXED EXPONENT=0.5  &
+        498            0. 0.5 0. 0.5 0. / REACNO=1 CID=CO SSID=MIXED  &
+        499            EXPONENT=0. 0. 1. 1. 0. 0. / REACNO=1 CID=CO2  &
+        500            SSID=MIXED EXPONENT=0. 0. 0. 0. 1. 1.
+        501        ADSORP-EQTER REACNO=1 TERM=1 A=0. B=0. C=0. D=0. /  &
+        502            REACNO=1 TERM=2 A=-26. B=13841.71277 C=0. D=0. /  &
+        503            REACNO=1 TERM=3 A=-23. B=14225.40293 C=0. D=0. /  &
+        504            REACNO=1 TERM=4 A=-49. B=28067.11571 C=0. D=0. /  &
+        505            REACNO=1 TERM=5 A=-22. B=9777.122925 C=0. D=0. /  &
+        506            REACNO=1 TERM=6 A=-49. B=23618.8357 C=0. D=0.
+        507        ADSORP-POW REACNO=1 EXPONENT=1.
+        508        PARAM NTERM-ADS=6
+        509
+        510    REACTIONS KISS16-2 LHHW
+        511        REAC-DATA 1 KINETIC CBASIS=FUGACITY
+        512        RATE-CON 1 PRE-EXP=1.5188E-33 ACT-ENERGY=266.0100000
+        513        STOIC 1 MIXED CO2 -1. / H2 -3. / MEOH 1. / H2O 1.
+        514        DFORCE-EXP-1 1 MIXED CO2 1. / MIXED H2 1.5
+        515        DFORCE-EXP-2 1 MIXED H2 -1.5 / MIXED MEOH 1. / MIXED  &
+        516            H2O 1.
+        517        DFORCE-EQ-1 REACNO=1 A=-22.48 B=9777.
+        518        DFORCE-EQ-2 REACNO=1 A=23.974 B=3222.
+        519        ADSORP-EXP REACNO=1 CID=H2O SSID=MIXED EXPONENT=0. 1. 0.  &
+        520            1. 0. 1. / REACNO=1 CID=H2 SSID=MIXED EXPONENT=0.5  &
+        521            0. 0.5 0. 0.5 0. / REACNO=1 CID=CO SSID=MIXED  &
+        522            EXPONENT=0. 0. 1. 1. 0. 0. / REACNO=1 CID=CO2  &
+        523            SSID=MIXED EXPONENT=0. 0. 0. 0. 1. 1.
+        524        ADSORP-EQTER REACNO=1 TERM=1 A=0. B=0. C=0. D=0. /  &
+        525            REACNO=1 TERM=2 A=-26. B=13841.71277 C=0. D=0. /  &
+        526            REACNO=1 TERM=3 A=-23. B=14225.40293 C=0. D=0. /  &
+        527            REACNO=1 TERM=4 A=-49. B=28067.11571 C=0. D=0. /  &
+        528            REACNO=1 TERM=5 A=-22. B=9777.122925 C=0. D=0. /  &
+        529            REACNO=1 TERM=6 A=-49. B=23618.8357 C=0. D=0.
+        530        ADSORP-POW REACNO=1 EXPONENT=1.
+        531        PARAM NTERM-ADS=6
+        532
+        533    REACTIONS KISS16RW LHHW
+        534        REAC-DATA 1 PHASE=V CBASIS=FUGACITY RBASIS=CAT-WT
+        535        RATE-CON 1 PRE-EXP=904210000. ACT-ENERGY=112.8600000
+        536        STOIC 1 MIXED CO2 -1. / H2 -1. / CO 1. / H2O 1.
+        537        DFORCE-EXP-1 1 MIXED CO2 1. / MIXED H2 1. / MIXED CO  &
+        538            0.
+        539        DFORCE-EXP-2 1 MIXED CO 1. / MIXED H2O 1.
+        540        DFORCE-EQ-1 REACNO=1 A=-22.48 B=9777.
+        541        DFORCE-EQ-2 REACNO=1 A=-28.12 B=15062.
+        542        ADSORP-EXP REACNO=1 CID=H2O SSID=MIXED EXPONENT=0. 1. 0.  &
+        543            1. 0. 1. / REACNO=1 CID=H2 SSID=MIXED EXPONENT=0.5  &
+        544            0. 0.5 0. 0.5 0. / REACNO=1 CID=CO SSID=MIXED  &
+        545            EXPONENT=0. 0. 1. 1. 0. 0. / REACNO=1 CID=CO2  &
+        546            SSID=MIXED EXPONENT=0. 0. 0. 0. 1. 1.
+        547        ADSORP-EQTER REACNO=1 TERM=1 A=0. B=0. C=0. D=0. /  &
+        548            REACNO=1 TERM=2 A=-26. B=13841.71277 C=0. D=0. /  &
+        549            REACNO=1 TERM=3 A=-23. B=14225.40293 C=0. D=0. /  &
+        550            REACNO=1 TERM=4 A=-49. B=28067.11571 C=0. D=0. /  &
+        551            REACNO=1 TERM=5 A=-22. B=9777.122925 C=0. D=0. /  &
+        552            REACNO=1 TERM=6 A=-49. B=23618.8357 C=0. D=0.
+        553        ADSORP-POW REACNO=1 EXPONENT=1.
+        554        PARAM NTERM-ADS=6
+        555
+        556    REACTIONS R-01VD LHHW
+        557        REAC-DATA 1 PHASE=V CBASIS=PARTIALPRES RBASIS=CAT-WT
+        558        REAC-DATA 2 PHASE=V CBASIS=PARTIALPRES RBASIS=CAT-WT
+        559        RATE-CON 1 PRE-EXP=1. ACT-ENERGY=0.0
+        560        RATE-CON 2 PRE-EXP=1. ACT-ENERGY=0.0
+        561        STOIC 1 MIXED CO2 -1. / H2 -3. / MEOH 1. / H2O 1.
+        562        STOIC 2 MIXED CO2 -1. / H2 -1. / CO 1. / H2O 1.
+        563        DFORCE-EXP-1 1 MIXED CO2 1. / MIXED H2 1.
+        564        DFORCE-EXP-1 2 MIXED CO2 1. / MIXED H2 0. / MIXED CO  &
+        565            0. / MIXED H2O 0.
+        566        DFORCE-EXP-2 1 MIXED H2 -2. / MIXED MEOH 1. / MIXED  &
+        567            H2O 1.
+        568        DFORCE-EXP-2 2 MIXED CO2 0. / MIXED H2 -1. / MIXED CO  &
+        569            1. / MIXED H2O 1.
+        570        DFORCE-EQ-1 REACNO=1 A=-29.87 B=4811.2 / REACNO=2 A=4.804  &
+        571            B=-11797.5
+        572        DFORCE-EQ-2 REACNO=1 A=17.55 B=-2249.8 / REACNO=2 A=0.131  &
+        573            B=-7023.5
+        574        ADSORP-EXP REACNO=1 CID=H2O SSID=MIXED EXPONENT=0. 1. 0.  &
+        575            1. / REACNO=1 CID=H2 SSID=MIXED EXPONENT=0. -1. 0.5  &
+        576            0. / REACNO=2 CID=H2O SSID=MIXED EXPONENT=0. 1. 0.  &
+        577            1. / REACNO=2 CID=H2 SSID=MIXED EXPONENT=0. -1. 0.5  &
+        578            0.
+        579        ADSORP-EQTER REACNO=1 TERM=1 A=0. / REACNO=1 TERM=2  &
+        580            A=8.1471 / REACNO=1 TERM=3 A=-6.4522 B=2068.44 /  &
+        581            REACNO=1 TERM=4 A=-34.9526 B=14928.92 / REACNO=2  &
+        582            TERM=1 A=0. B=0. C=0. D=0. / REACNO=2 TERM=2  &
+        583            A=8.1471 B=0. C=0. D=0. / REACNO=2 TERM=3 A=-6.4522  &
+        584            B=2068.44 C=0. D=0. / REACNO=2 TERM=4 A=-34.9526  &
+        585            B=14928.92 C=0. D=0.
+        586        ADSORP-POW REACNO=1 EXPONENT=3. / REACNO=2 EXPONENT=1.
+        587        PARAM NTERM-ADS=4
+        588
+        589    DISABLE
+        590        SENSITIVITY S-CO2 S-REACT
+        591        CALCULATOR C-H2
+        592        DESIGN-SPEC D-MEOH D-SPLITH
+        593    ;
+        594    ;
+        595    ;
+        596    ;
+        597    ;
+
+   SIMULATION STARTED     MODULE USED: apmain  
+   LOCATED IN:C:\Program Files\AspenTech\Aspen Plus V14.0\Engine\\xeq

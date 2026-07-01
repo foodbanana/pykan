@@ -1,0 +1,29 @@
+                 CONVERGENCE STATUS SUMMARY........................  0
+
+ CONVERGENCE STATUS SUMMARY              
+ --------------------------
+
+   DESIGN-SPEC SUMMARY
+   ===================
+
+
+   DESIGN                                                            CONV
+   SPEC      ERROR        TOLERANCE    ERR/TOL      VARIABLE   STAT  BLOCK
+   ------    -----        ---------    -------      --------   ----  -----
+   D-H2      0.62629E-01  0.10000      0.62629      0.35423     #    $OLVER02
+
+   TEAR STREAM SUMMARY
+   ===================
+
+
+   STREAM    VARIABLE         MAXIMUM      MAX. ERR.    ABSOLUTE          CONV
+   ID        ID               ERR/TOL      RELATIVE     ERROR       STAT  BLOCK
+   ------    --------         --------     -------      ---------   ----  -----
+   115      O2 MOLEFLOW       0.97642      0.97642E-05  0.21309E-07  #    $OLVER01                                                                                 
+   120      O2 MOLEFLOW       0.61268      0.61268E-05  0.22284E-07  #    $OLVER01                                                                                 
+   221      MEOH MOLEFLOW     0.12529E-01  0.12529E-06  0.28848E-08  #    $OLVER01                                                                                 
+
+   #  = CONVERGED
+   *  = NOT CONVERGED
+   LB = AT LOWER BOUNDS
+   UB = AT UPPER BOUNDS

@@ -129,3 +129,79 @@ For users who are machine learning focus, I have to be honest that KANs are like
 The most common question I've been asked lately is whether KANs will be next-gen LLMs. I don't have good intuition about this. KANs are designed for applications where one cares about high accuracy and/or interpretability. We do care about LLM interpretability for sure, but interpretability can mean wildly different things for LLM and for science. Do we care about high accuracy for LLMs? I don't know, scaling laws seem to imply so, but probably not too high precision. Also, accuracy can also mean different things for LLM and for science. This subtlety makes it hard to directly transfer conclusions in our paper to LLMs, or machine learning tasks in general. However, I would be very happy if you have enjoyed the high-level idea (learnable activation functions on edges, or interacting with AI for scientific discoveries), which is not necessariy *the future*, but can hopefully inspire and impact *many possible futures*. As a physicist, the message I want to convey is less of "KANs are great", but more of "try thinking of current architectures critically and seeking fundamentally different alternatives that can do fun and/or useful stuff".
 
 I would like to welcome people to be critical of KANs, but also to be critical of critiques as well. Practice is the only criterion for testing understanding (实践是检验真理的唯一标准). We don't know many things beforehand until they are really tried and shown to be succeeding or failing. As much as I'm willing to see success mode of KANs, I'm equally curious about failure modes of KANs, to better understand the boundaries. KANs and MLPs cannot replace each other (as far as I can tell); they each have advantages in some settings and limitations in others. I would be intrigued by a theoretical framework that encompasses both and could even suggest new alternatives (physicists love unified theories, sorry :).
+
+
+## Quickstart: Hyperparameter sweep for MultKAN (sequential)
+
+This repository includes a simple, sequential hyperparameter sweep utility for MultKAN.
+You can use it either from the command line (CLI) or directly from Python code.
+
+Prerequisites
+- Python 3.8+
+- Install dependencies: `pip install -r requirements.txt`
+- Optional CUDA GPU(s) if you want to distribute trials across multiple devices.
+
+Data format
+- Supervised regression with numpy arrays shaped as follows:
+  - X_train: (N_train, n_features)
+  - y_train: (N_train, n_targets)
+  - X_val:   (N_val, n_features)
+  - y_val:   (N_val, n_targets)
+  - Optional X_test, y_test with the same conventions.
+
+Option A — CLI usage
+- The sweep script can be executed as a module. Make sure you run it from the project root.
+
+  Example (CPU only):
+  python -m kan.experiments.multkan_hparam_sweep --no_cuda --out results.json
+
+  Example (use CUDA on a single device if available):
+  python -m kan.experiments.multkan_hparam_sweep --out results.json
+
+  Arguments:
+  - --no_cuda: force CPU even if CUDA is available
+  - --out: path to write JSON results
+  - --seed: seed for the built-in toy dataset generator
+  - --n_jobs: accepted for backward compatibility but ignored (execution is sequential)
+
+  The CLI uses a small toy dataset and a sample parameter grid as a demonstration.
+  It writes a JSON file with all trial results and prints the best configuration by validation loss.
+
+Option B — Programmatic usage
+- Import and call sweep_multkan with your own numpy datasets and parameter grid. 
+~~~
+from kan.experiments.multkan_hparam_sweep import sweep_multkan
+import numpy as np
+~~~ 
+
+- X_*, y_* are numpy arrays as described above
+~~~
+  out = sweep_multkan(
+      X_train, y_train, X_val, y_val, X_test, y_test,
+      param_grid={
+          'width': [[X_train.shape[1], 8, 1], [X_train.shape[1], 12, 1]],
+          'grid': [3, 5],
+          'k': [3],
+          'mult_arity': [2],
+          'steps': [50],
+          'opt': ['LBFGS'],
+          'lr': [1.0],
+          'lamb': [0.0, 0.01],
+          'update_grid': [True],
+      },
+      seeds=[0, 1],      # run each config with multiple seeds
+      use_cuda=True,     # set False to force CPU
+  )
+~~~
+- out is a dict with keys: 'results' (list of trials) and 'best' (the best trial).
+~~~
+  print(out['best'])
+~~~
+
+Notes and tips
+- Reproducibility: Each trial seeds numpy/torch and sets deterministic cudnn flags.
+- Execution: The sweep runs sequentially on a single device (cuda:0 if available and not disabled, otherwise CPU). Any --n_jobs argument is ignored.
+- Parameter mapping: Keys like width, grid, k, mult_arity are passed to the MultKAN
+  constructor; other keys (opt, steps, lamb, lr, update_grid, etc.) are forwarded to `fit()`.
+- Outputs: Validation loss is used to select the best configuration. The JSON file contains
+  train/val/test MSE for each trial along with the parameters, seed, and device.

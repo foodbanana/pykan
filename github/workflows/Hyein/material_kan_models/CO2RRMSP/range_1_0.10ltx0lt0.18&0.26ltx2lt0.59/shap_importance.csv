@@ -1,0 +1,9 @@
+Feature,Mean_Abs_SHAP
+Current density (A/cm2),0.18505216044286393
+Voltage (V),0.06302462908577776
+Faradaic efficiency,0.387503823122489
+CO conversion,0.08090394264967098
+Crossover rate,0.0050244006544380646
+Capture energy (MJ/kgCO2),0.012135151060509074
+Electricity price (USD/kWh),0.21656501435806563
+Membrane cost (USD/m2),0.02547375475814997

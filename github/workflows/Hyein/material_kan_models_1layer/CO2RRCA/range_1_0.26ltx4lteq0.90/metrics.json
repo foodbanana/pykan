@@ -1,0 +1,16 @@
+{
+    "range": "0.26 < x4 <= 0.90",
+    "test_r2": 0.9903738713997982,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.001,
+        "hidden_layer_sizes": [
+            64,
+            32,
+            16
+        ],
+        "alpha": 0.1,
+        "activation": "relu"
+    },
+    "n_samples": 1882
+}

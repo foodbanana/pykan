@@ -1,0 +1,13 @@
+{
+    "dataset": "CO2RRLCA",
+    "test_r2": 0.982546862699977,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.001,
+        "hidden_layer_sizes": [
+            128
+        ],
+        "alpha": 1.0,
+        "activation": "relu"
+    }
+}

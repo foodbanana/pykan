@@ -1,0 +1,14 @@
+{
+    "dataset": "AgNP",
+    "test_r2": 0.9148412623203956,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.1,
+        "hidden_layer_sizes": [
+            128,
+            64
+        ],
+        "alpha": 1.0,
+        "activation": "relu"
+    }
+}

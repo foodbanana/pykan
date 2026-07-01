@@ -1,0 +1,129 @@
+C:\Users\user\miniconda3\envs\pykan-new\python.exe D:\pykan\github\workflows\Hyein\meta_executor.py 
+TARGET: Conductivity (measured) (S/cm)
+# of data after removing outliers: 199 개 (34 개 제거됨)
+Train set: 127 (63.8%)
+Validation set: 32 (16.1%)
+Test set: 40 (20.1%)
+🚀 하이퍼파라미터 튜닝 시작... (잠시만 기다려주세요)
+Fitting 3 folds for each of 200 candidates, totalling 600 fits
+
+========================================
+🏆 최적 파라미터: {'solver': 'adam', 'learning_rate_init': 0.01, 'hidden_layer_sizes': (64, 32, 16), 'alpha': 0.001, 'activation': 'relu'}
+⭐️ 최고 교차검증 점수 (R2): 0.7114
+========================================
+💾 모델과 스케일러가 성공적으로 저장되었습니다!
+ - 모델 파일: best_mlp_model.pkl
+ - 스케일러 파일: mlp_scaler.pkl
+D:\pykan\github\workflows\Hyein\material_01_NN.py:171: DeprecationWarning: `salib.sample.saltelli` will be removed in SALib 1.5. Please use `salib.sample.sobol`
+  X_sobol = saltelli.sample(problem, N, calc_second_order=True)
+생성된 샘플 개수: 12288개
+
+[Sobol Analysis Result]
+     Feature  Total_Effect (ST)  First_Order (S1)
+3  Feature 3           0.328034          0.289931
+2  Feature 2           0.313017          0.273918
+1  Feature 1           0.296362          0.266101
+0  Feature 0           0.109181          0.087884
+4  Feature 4           0.049504          0.034955
+TARGET: loss
+# of data after removing outliers: 3295 개 (0 개 제거됨)
+Train set: 2108 (64.0%)
+Validation set: 528 (16.0%)
+Test set: 659 (20.0%)
+🚀 하이퍼파라미터 튜닝 시작... (잠시만 기다려주세요)
+Fitting 3 folds for each of 200 candidates, totalling 600 fits
+
+========================================
+🏆 최적 파라미터: {'solver': 'lbfgs', 'learning_rate_init': 0.001, 'hidden_layer_sizes': (100, 100), 'alpha': 0.01, 'activation': 'relu'}
+⭐️ 최고 교차검증 점수 (R2): 0.9318
+========================================
+💾 모델과 스케일러가 성공적으로 저장되었습니다!
+ - 모델 파일: best_mlp_model.pkl
+ - 스케일러 파일: mlp_scaler.pkl
+D:\pykan\github\workflows\Hyein\material_02_NN.py:171: DeprecationWarning: `salib.sample.saltelli` will be removed in SALib 1.5. Please use `salib.sample.sobol`
+  X_sobol = saltelli.sample(problem, N, calc_second_order=True)
+생성된 샘플 개수: 12288개
+
+[Sobol Analysis Result]
+     Feature  Total_Effect (ST)  First_Order (S1)
+3  Feature 3           0.653631          0.547925
+0  Feature 0           0.225737          0.161811
+2  Feature 2           0.171995          0.142887
+4  Feature 4           0.072197          0.024017
+1  Feature 1           0.011011          0.005420
+TARGET: Instability index
+# of data after removing outliers: 139 개 (0 개 제거됨)
+Train set: 88 (63.3%)
+Validation set: 23 (16.5%)
+Test set: 28 (20.1%)
+🚀 하이퍼파라미터 튜닝 시작... (잠시만 기다려주세요)
+Fitting 3 folds for each of 200 candidates, totalling 600 fits
+
+========================================
+🏆 최적 파라미터: {'solver': 'lbfgs', 'learning_rate_init': 0.001, 'hidden_layer_sizes': (128,), 'alpha': 0.001, 'activation': 'relu'}
+⭐️ 최고 교차검증 점수 (R2): 0.9024
+========================================
+💾 모델과 스케일러가 성공적으로 저장되었습니다!
+ - 모델 파일: best_mlp_model.pkl
+ - 스케일러 파일: mlp_scaler.pkl
+D:\pykan\github\workflows\Hyein\material_03_NN.py:171: DeprecationWarning: `salib.sample.saltelli` will be removed in SALib 1.5. Please use `salib.sample.sobol`
+  X_sobol = saltelli.sample(problem, N, calc_second_order=True)
+생성된 샘플 개수: 8192개
+
+[Sobol Analysis Result]
+     Feature  Total_Effect (ST)  First_Order (S1)
+0  Feature 0           0.762440          0.538006
+2  Feature 2           0.269431          0.154508
+1  Feature 1           0.205219          0.065527
+TARGET: Score
+# of data after removing outliers: 93 개 (7 개 제거됨)
+Train set: 59 (63.4%)
+Validation set: 15 (16.1%)
+Test set: 19 (20.4%)
+🚀 하이퍼파라미터 튜닝 시작... (잠시만 기다려주세요)
+Fitting 3 folds for each of 200 candidates, totalling 600 fits
+
+========================================
+🏆 최적 파라미터: {'solver': 'lbfgs', 'learning_rate_init': 0.001, 'hidden_layer_sizes': (64, 32, 16), 'alpha': 0.01, 'activation': 'relu'}
+⭐️ 최고 교차검증 점수 (R2): 0.8208
+========================================
+💾 모델과 스케일러가 성공적으로 저장되었습니다!
+ - 모델 파일: best_mlp_model.pkl
+ - 스케일러 파일: mlp_scaler.pkl
+D:\pykan\github\workflows\Hyein\material_04_NN.py:171: DeprecationWarning: `salib.sample.saltelli` will be removed in SALib 1.5. Please use `salib.sample.sobol`
+  X_sobol = saltelli.sample(problem, N, calc_second_order=True)
+생성된 샘플 개수: 10240개
+
+[Sobol Analysis Result]
+     Feature  Total_Effect (ST)  First_Order (S1)
+1  Feature 1           0.535722          0.472422
+2  Feature 2           0.425745          0.367906
+0  Feature 0           0.095299          0.048026
+3  Feature 3           0.070683          0.014908
+TARGET: toughness
+# of data after removing outliers: 1800 개 (0 개 제거됨)
+Train set: 1152 (64.0%)
+Validation set: 288 (16.0%)
+Test set: 360 (20.0%)
+🚀 하이퍼파라미터 튜닝 시작... (잠시만 기다려주세요)
+Fitting 3 folds for each of 200 candidates, totalling 600 fits
+
+========================================
+🏆 최적 파라미터: {'solver': 'lbfgs', 'learning_rate_init': 0.01, 'hidden_layer_sizes': (100, 100), 'alpha': 0.1, 'activation': 'relu'}
+⭐️ 최고 교차검증 점수 (R2): 0.7047
+========================================
+💾 모델과 스케일러가 성공적으로 저장되었습니다!
+ - 모델 파일: best_mlp_model.pkl
+ - 스케일러 파일: mlp_scaler.pkl
+D:\pykan\github\workflows\Hyein\material_05_NN.py:171: DeprecationWarning: `salib.sample.saltelli` will be removed in SALib 1.5. Please use `salib.sample.sobol`
+  X_sobol = saltelli.sample(problem, N, calc_second_order=True)
+생성된 샘플 개수: 10240개
+
+[Sobol Analysis Result]
+     Feature  Total_Effect (ST)  First_Order (S1)
+1  Feature 1           0.895654          0.764313
+2  Feature 2           0.176272          0.055877
+0  Feature 0           0.083930          0.009535
+3  Feature 3           0.076314          0.017434
+
+Process finished with exit code 0

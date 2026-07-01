@@ -1,0 +1,24 @@
+
+ DESIGN-SPEC:  D-H2                      
+ ------------------
+
+   SAMPLED VARIABLES:
+     H2       : H2 MOLEFLOW IN STREAM 113 SUBSTREAM MIXED   
+     CO2      : CO2 MOLEFLOW IN STREAM 113 SUBSTREAM MIXED  
+
+   SPECIFICATION:
+     MAKE H2/CO2 APPROACH 3.00000    
+     WITHIN          0.100000                                 
+
+   MANIPULATED VARIABLES:
+     VARY     : TOTAL MOLEFLOW IN STREAM H2 SUBSTREAM MIXED 
+     LOWER LIMIT =           0.100000                 KMOL/SEC        
+     UPPER LIMIT =           2.00000                  KMOL/SEC        
+     FINAL VALUE =           0.35007                  KMOL/SEC        
+
+   VALUES OF ACCESSED FORTRAN VARIABLES:
+     VARIABLE      VALUE AT START      FINAL VALUE     UNITS
+                      OF LOOP                               
+     --------      --------------      -----------     -----
+     H2              2.10691            2.10691        KMOL/SEC        
+     CO2            0.714909           0.714909        KMOL/SEC        

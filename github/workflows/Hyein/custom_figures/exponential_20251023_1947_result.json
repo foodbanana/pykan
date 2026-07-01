@@ -1,0 +1,43 @@
+{
+    "params": {
+        "grid": 10,
+        "k": 3,
+        "lamb": 0.0001,
+        "lamb_coef": 0.0001,
+        "lamb_entropy": 0.05,
+        "lr": 0.01,
+        "mult_arity": 0,
+        "opt": "LBFGS",
+        "prune": true,
+        "pruning_edge_th": 0.03,
+        "pruning_node_th": 0.01,
+        "steps": 50,
+        "sym_weight_simple": 0.9,
+        "symbolic": false,
+        "update_grid": true,
+        "width": [
+            [
+                2,
+                0
+            ],
+            [
+                2,
+                0
+            ],
+            [
+                1,
+                0
+            ]
+        ]
+    },
+    "val_loss": 0.007719733286648989,
+    "train_loss": 0.007518439553678036,
+    "test_loss": 0.007719745859503746,
+    "r2_train": 0.9999755069376424,
+    "r2_val": 0.9999735584417602,
+    "r2_test": 0.9999714315177988,
+    "seed": 0,
+    "device": "cpu",
+    "spline_train_loss": 0.05147179588675499,
+    "spline_test_loss": 0.053108371794223785
+}

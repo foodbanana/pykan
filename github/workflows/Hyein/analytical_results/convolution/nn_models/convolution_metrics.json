@@ -1,0 +1,15 @@
+{
+    "dataset": "convolution",
+    "test_r2": 0.9895491906032047,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.001,
+        "hidden_layer_sizes": [
+            64,
+            32,
+            16
+        ],
+        "alpha": 0.0001,
+        "activation": "relu"
+    }
+}

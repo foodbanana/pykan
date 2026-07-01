@@ -1,0 +1,8 @@
+ ? SETUP UNITS-SET SET1 ? \ UNITSET BASESET = SI (1 1 1 1 1 1 1 1 1 1 1 18 15 1 
+ 1 1 1 1 3 5 1 4 1 1 1 1 1 1 1 1 4 1 1 1 1 1 1 1 12 10 1 1 1 1 1 1 2 1 1 1 1 1  
+ 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 4 5 1 1 1 1 1 1 1 1 1 1 1 1 7 1 1 1 
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  
+ 1 1 1 1 1 1 1 7 1 1 1 18 1 1 1 1 1 1 1 1 1 1 1 1 1) \                          
+ ? BLOCK PUMP P150 ? ; SET1 ; \ PARAM PRES = 4.20 <20> <5> EFF = .80 <0> <0> \  
+ ? DISABLE ? ; SET1 ; \ SENSITIVITY LIST = ( "S-CO2" "S-REACT" ) \ \ CALCULATOR 
+ LIST = ( "C-H2" ) \ \ DESIGN-SPEC LIST = ( "D-MEOH" "D-SPLITH" ) \ "\@"        

@@ -1,0 +1,13 @@
+{
+    "dataset": "logarithm",
+    "test_r2": 0.9992806074538958,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.001,
+        "hidden_layer_sizes": [
+            128
+        ],
+        "alpha": 0.001,
+        "activation": "relu"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "dataset": "original",
+    "test_r2": 0.9990463244801284,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.01,
+        "hidden_layer_sizes": [
+            128,
+            64
+        ],
+        "alpha": 0.0001,
+        "activation": "relu"
+    }
+}

@@ -1,0 +1,28 @@
+affine_trainable: false
+auto_save: true
+base_fun_name: silu
+ckpt_path: ./model
+device: cpu
+grid: 5
+grid_eps: 0.02
+grid_range: !!python/tuple
+- 0.1
+- 0.9
+k: 3
+mult_arity: 2
+round: 0
+sb_trainable: true
+sp_trainable: true
+state_id: 1
+symbolic.funs_name.0:
+- - sin
+  - x^3
+  - 1/x
+  - sin
+  - 1/x^2
+symbolic_enabled: true
+width:
+- - 5
+  - 0
+- - 1
+  - 0

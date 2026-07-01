@@ -1,0 +1,13 @@
+{
+    "dataset": "log_sum_10d",
+    "test_r2": 0.9835273874251345,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.001,
+        "hidden_layer_sizes": [
+            128
+        ],
+        "alpha": 0.0001,
+        "activation": "relu"
+    }
+}

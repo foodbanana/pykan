@@ -1,0 +1,15 @@
+{
+    "range": "0.10<x9<0.13 & 0.10<x10<0.79",
+    "test_r2": 0.23607824365804886,
+    "best_params": {
+        "solver": "adam",
+        "learning_rate_init": 0.01,
+        "hidden_layer_sizes": [
+            100,
+            100
+        ],
+        "alpha": 0.1,
+        "activation": "relu"
+    },
+    "n_samples": 34
+}

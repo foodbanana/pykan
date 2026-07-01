@@ -1,0 +1,14 @@
+{
+    "dataset": "exponential",
+    "test_r2": 0.9994842398852994,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.01,
+        "hidden_layer_sizes": [
+            100,
+            100
+        ],
+        "alpha": 0.001,
+        "activation": "relu"
+    }
+}

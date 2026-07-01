@@ -1,0 +1,16 @@
+{
+    "range": "All Range",
+    "test_r2": 0.9999773236863699,
+    "best_params": {
+        "solver": "lbfgs",
+        "learning_rate_init": 0.0005,
+        "hidden_layer_sizes": [
+            64,
+            32,
+            16
+        ],
+        "alpha": 0.0001,
+        "activation": "tanh"
+    },
+    "n_samples": 800
+}

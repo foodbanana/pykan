@@ -1,0 +1,11 @@
+SLAVE:
+INPUT: _3856ulb.inm
+MODNAME: apmain
+RUNID: _3856ulb
+NEW_RUNID: _3856ulb
+OLD_RUNID: _3856ulb
+PDF: _3856ulb.appdf
+USERNAME: user
+XMOD: C:\Program Files\AspenTech\Aspen Plus V14.0\Engine\xeq\apmain
+SPONLY:
+DBCONN: _3856ulb
